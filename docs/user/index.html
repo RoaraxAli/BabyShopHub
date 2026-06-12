@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BabyShopHub - Parent Help Center</title>
+  <!-- Google Fonts Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="logo">
+      <span class="logo-emoji">👶</span>
+      <span class="logo-text">BabyShopHub</span>
+      <span class="badge">Parent Center</span>
+    </div>
+    <div class="header-links">
+      <a href="../developer/index.html" class="dev-portal-btn">Developer Docs 🛠️</a>
+    </div>
+  </header>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <nav class="side-nav">
+        <h3>User Guidelines</h3>
+        <ul>
+          <li><a href="#welcome" class="active">Welcome</a></li>
+          <li><a href="#shopping">How to Shop</a></li>
+          <li><a href="#delivery">Delivery & Shipping</a></li>
+          <li><a href="#returns">Returns & Refunds</a></li>
+          <li><a href="#mfa">MFA Security Settings</a></li>
+          <li><a href="#faq">Frequently Asked Questions</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="doc-content-root">
+      
+      <!-- Section: Welcome -->
+      <section id="welcome" class="doc-section">
+        <h1>Welcome to the Parent Center! 🍼</h1>
+        <p class="subtitle">Your ultimate shopping manual for infant care, secure accounts, and delivery trackers.</p>
+        <p>At BabyShopHub, we understand that parenting is a beautiful yet demanding adventure. Our mobile application is crafted to simplify your shopping experience by keeping baby food, cotton clothes, toys, and premium diapers just a few taps away. This manual helps you make the most of our application services.</p>
+      </section>
+
+      <!-- Section: How to Shop -->
+      <section id="shopping" class="doc-section">
+        <h2>How to Shop in the App 🛒</h2>
+        <p>Our marketplace makes it incredibly easy to find products, manage a cart, and complete orders safely:</p>
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <h4>Search & Filter</h4>
+            <p>Use the query bar to search by product names (e.g. onesies) or select horizontal category tabs.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <h4>Add to Cart</h4>
+            <p>Tap the "+" button on items to add them. Adjust quantities in the shopping cart panel anytime.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <h4>Checkout Securely</h4>
+            <p>Input your shipping address, fill in credit card credentials, and click "Authorize Payment".</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Delivery -->
+      <section id="delivery" class="doc-section">
+        <h2>Delivery & Shipping Options 🚚</h2>
+        <p>We pride ourselves on dispatching orders rapidly so your baby never runs out of essentials:</p>
+        <ul>
+          <li><strong>Standard Delivery (Free):</strong> Delivered within 2 to 3 business days. Free for all orders!</li>
+          <li><strong>Real-time Tracking:</strong> Once your payment is approved, we automatically send an itemized bill receipt to your registered email containing delivery progress coordinates.</li>
+        </ul>
+      </section>
+
+      <!-- Section: Returns -->
+      <section id="returns" class="doc-section">
+        <h2>Returns & Refunds Policy ↩️</h2>
+        <p>Your satisfaction is our primary concern. Review our baby-friendly return terms below:</p>
+        <div class="alert-box tips">
+          <p><strong>Returns Window:</strong> You can return any unopened diapers, organic purées, clothing, or toys within <strong>30 days of purchase</strong> for a complete refund.</p>
+        </div>
+        <p>To initiate a return, navigate to your Profile page, tap "Contact Support", and specify your Order Invoice ID. Our staff will reply within 24 hours.</p>
+      </section>
+
+      <!-- Section: MFA Settings -->
+      <section id="mfa" class="doc-section">
+        <h2>Multi-Factor Authentication (MFA) 🔒</h2>
+        <p>Protecting your account records is essential. We utilize advanced security challenges to prevent compromises:</p>
+        <ul>
+          <li><strong>MFA Toggling:</strong> Under your Profile page, toggle the "Multi-Factor Authentication" switch.</li>
+          <li><strong>Login Security Challenges:</strong> Once enabled, logging in will automatically generate a <strong>6-digit OTP verification code</strong> dispatched directly to your registered email inbox. You must enter this code to complete authentication.</li>
+          <li><strong>New Location Warnings:</strong> If our security center detects a login attempt from a simulated new device browser or location (e.g. London, Tokyo), we immediately send an **Unknown Location Alert Email** containing security reset steps.</li>
+        </ul>
+      </section>
+
+      <!-- Section: FAQ -->
+      <section id="faq" class="doc-section">
+        <h2>Frequently Asked Questions ❓</h2>
+        
+        <div class="accordion">
+          <div class="accordion-item">
+            <button class="accordion-title" id="faq-t1">What payment cards are supported?</button>
+            <div class="accordion-content">
+              <p>We support Visa, Mastercard, American Express, and Discover cards through our secure gateway checkout process.</p>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <button class="accordion-title" id="faq-t2">Can I modify my delivery shipping address?</button>
+            <div class="accordion-content">
+              <p>Once an order checkout completes and receipt emails are dispatched, please notify support within 30 minutes to adjust details before dispatch.</p>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <button class="accordion-title" id="faq-t3">How does the Wishlist "Back in Stock" notification work?</button>
+            <div class="accordion-content">
+              <p>If a product (e.g. Wooden Stacking Toy) shows "Out of Stock", simply bookmark it or tap "Notify Me". The absolute second our admin updates the stock, we fire an automated email alert to your registered address!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Floating Grounded AI Chat Assistant -->
+  <div class="chat-trigger-bubble" id="chat-trigger">
+    <span class="chat-icon">🤖</span>
+    <span class="chat-badge">AI Assistant</span>
+  </div>
+
+  <div class="chat-window" id="chat-window">
+    <div class="chat-header">
+      <div class="chat-title">
+        <span class="icon">🤖</span>
+        <div>
+          <h4>Parent Help Assistant</h4>
+          <span class="status">Grounded in User Manual</span>
+        </div>
+      </div>
+      <button class="close-btn" id="chat-close">×</button>
+    </div>
+    
+    <!-- Token Setup Modal Trigger -->
+    <div class="token-banner" id="token-banner">
+      <span>OpenRouter API Key needed for AI Chat.</span>
+      <button id="open-config-btn">Configure Key 🔑</button>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+      <div class="message bot">
+        <p>Hello! I am your grounded Parent Assistant. I only answer questions using facts directly taken from this help center documentation. How can I help you today?</p>
+      </div>
+    </div>
+    
+    <div class="chat-input-area">
+      <input type="text" id="chat-input" placeholder="Ask about shipping, returns, MFA..." />
+      <button id="chat-send">Send</button>
+    </div>
+  </div>
+
+  <!-- Key Configuration Modal -->
+  <div class="modal-overlay" id="config-modal">
+    <div class="modal-card">
+      <h3>Configure OpenRouter Key</h3>
+      <p>Your OpenRouter API Key is stored securely inside your browser's session memory and never shared elsewhere.</p>
+      <input type="password" id="api-key-input" placeholder="sk-or-v1-..." />
+      <div class="modal-actions">
+        <button class="btn-cancel" id="btn-config-cancel">Cancel</button>
+        <button class="btn-save" id="btn-config-save">Save Key</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

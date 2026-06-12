@@ -1,0 +1,14 @@
+{
+  "name": "babyshophub-smtp-relay",
+  "version": "1.0.0",
+  "description": "Secure, credit-card-free Zoho SMTP relay for BabyShopHub",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "nodemailer": "^6.9.13"
+  }
+}

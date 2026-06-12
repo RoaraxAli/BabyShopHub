@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BabyShopHub - Developer Guidelines</title>
+  <!-- Google Fonts Outfit & Inter & Fira Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="logo">
+      <span class="logo-emoji">🛠️</span>
+      <span class="logo-text">BabyShopHub Developer Portal</span>
+      <span class="badge">v0.1.0-alpha</span>
+    </div>
+    <div class="header-links">
+      <a href="../user/index.html" class="user-portal-btn">Parent Help Center 👶</a>
+    </div>
+  </header>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <nav class="side-nav">
+        <h3>Architecture Guides</h3>
+        <ul>
+          <li><a href="#intro" class="active">Introduction</a></li>
+          <li><a href="#structure">Project Layout</a></li>
+          <li><a href="#emulators">Firebase Local Emulators</a></li>
+          <li><a href="#schema">Firestore Schema</a></li>
+          <li><a href="#functions">Cloud Functions triggers</a></li>
+          <li><a href="#theme">Dynamic Theme Provider</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="doc-content-root">
+      
+      <!-- Section: Intro -->
+      <section id="intro" class="doc-section">
+        <h1>Developer Architecture & API Guidelines 🛠️</h1>
+        <p class="subtitle">Complete technical specifications for Flutter client compilation, database schemes, and email triggers.</p>
+        <p>This developer portal details the serverless architecture of BabyShopHub. The project utilizes a decoupled approach: a cross-platform <strong>Flutter Mobile Client</strong> that connects directly to the <strong>Firebase Emulator Suite</strong> locally, and triggers Node.js <strong>Cloud Functions</strong> to handle transactional email dispatches via Gmail SMTP.</p>
+      </section>
+
+      <!-- Section: Project Layout -->
+      <section id="structure" class="doc-section">
+        <h2>Directory & Project Layout 📂</h2>
+        <p>The codebase is organized into key modules to allow clean maintenance and robust testing:</p>
+        <pre class="code-block"><code>babyshophub/
+├── firebase.json         # Local Emulator port mapping configuration
+├── firestore.rules       # Security and query path assertions
+├── firebase/
+│   └── functions/        # Node.js Background triggers package
+│       ├── index.js      # Gmail SMTP trigger routines (Nodemailer)
+│       └── package.json  # Functions dependencies
+├── docs/                 # Documentation folders
+│   ├── user/             # Parent Help Portal
+│   └── developer/        # Developer System Guidelines
+└── lib/                  # Flutter Client Application source
+    ├── main.dart         # Entry and Provider binder
+    ├── theme/            # Theme Engine & SharedPrefs states
+    ├── models/           # Dart Object classes (Cart, User, Products)
+    └── screens/          # Mobile View controllers</code></pre>
+      </section>
+
+      <!-- Section: Firebase Local Emulators -->
+      <section id="emulators" class="doc-section">
+        <h2>Setting up Firebase Local Emulators 🚀</h2>
+        <p>To run, test, and debug auth systems, databases, and emails locally without cloud billing, follow these steps:</p>
+        <div class="alert-box alert">
+          <p><strong>Pre-requisite:</strong> Ensure Node.js and the Firebase CLI tools are installed: <code>npm install -g firebase-tools</code></p>
+        </div>
+        <ol>
+          <li>Open a terminal in the root workspace directory.</li>
+          <li>Install the Cloud Functions package dependencies:
+            <pre class="code-block"><code>cd firebase/functions && npm install</code></pre>
+          </li>
+          <li>Configure SMTP credentials by copying <code>.env.example</code> to <code>.env</code> inside the functions directory and populating it with your Google App Passwords.</li>
+          <li>Start the emulator suite:
+            <pre class="code-block"><code>firebase emulators:start</code></pre>
+          </li>
+          <li>Launch the Flutter Web app pointing to localhost emulators:
+            <pre class="code-block"><code>flutter run -d chrome --web-port=5000</code></pre>
+          </li>
+        </ol>
+      </section>
+
+      <!-- Section: Firestore Schema -->
+      <section id="schema" class="doc-section">
+        <h2>Firestore Collection Schemas 🗄️</h2>
+        <p>Our database organizes data into four core collections. Here are the typical schemas utilized:</p>
+        
+        <h3>1. <code>users/{userId}</code></h3>
+        <pre class="code-block"><code>{
+  "uid": "usr_12345abcde",
+  "email": "parent@gmail.com",
+  "displayName": "Muhammad Ali",
+  "avatarIndex": 0,
+  "isMfaEnabled": true,
+  "wishlistedProductIds": ["p1", "p4"]
+}</code></pre>
+
+        <h3>2. <code>orders/{orderId}</code></h3>
+        <pre class="code-block"><code>{
+  "userId": "usr_12345abcde",
+  "email": "parent@gmail.com",
+  "items": [
+    { "id": "p1", "name": "Cotton Onesies Set", "quantity": 2, "price": 24.99 }
+  ],
+  "total": 49.98,
+  "address": "123 Sweet Baby Lane",
+  "createdAt": "2026-05-24T09:40:00Z"
+}</code></pre>
+      </section>
+
+      <!-- Section: Cloud Functions triggers -->
+      <section id="functions" class="doc-section">
+        <h2>Cloud Functions & SMTP Emails 📧</h2>
+        <p>Background events listen to Firestore mutations to trigger Nodemailer dispatches. The triggers are:</p>
+        <ul>
+          <li><strong>onUserCreated (users/{uid}):</strong> Generates a welcome email containing instructions.</li>
+          <li><strong>onOrderCreated (orders/{orderId}):</strong> Renders a dynamic receipt HTML table and emails it instantly.</li>
+          <li><strong>onProductStockUpdated (products/{productId}):</strong> Listens to stock modifications. If stock transitions from <code>0</code> to <code>>0</code>, it queries all users who have this <code>productId</code> in their active wishlist, gathers their addresses, and fires back-in-stock alerts.</li>
+          <li><strong>onLoginLocationCheck (logins/{loginId}):</strong> Detects login locations. If simulated threat IP checks fail, dispatches a security login warning alert.</li>
+        </ul>
+      </section>
+
+      <!-- Section: Dynamic Theme Provider -->
+      <section id="theme" class="doc-section">
+        <h2>Dynamic Theme Provider & Styles 🎨</h2>
+        <p>The client application contains a robust <code>ThemeProvider</code> extending <code>ChangeNotifier</code>. It allows picking theme styles preset packages or custom RGB hexadecimal codes (like <code>#FF9EAA</code>) for primary/secondary configurations.</p>
+        <p>Color states are automatically serialized and saved locally to disk using <code>SharedPreferences</code> on changes. On boot-up, the app reads these keys and loads the customized themes, preventing styling lag.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Floating Grounded AI Chat Assistant -->
+  <div class="chat-trigger-bubble" id="chat-trigger">
+    <span class="chat-icon">🤖</span>
+    <span class="chat-badge">DEV AI</span>
+  </div>
+
+  <div class="chat-window" id="chat-window">
+    <div class="chat-header">
+      <div class="chat-title">
+        <span class="icon">🤖</span>
+        <div>
+          <h4>Dev Portal AI Guide</h4>
+          <span class="status">Grounded in System Docs</span>
+        </div>
+      </div>
+      <button class="close-btn" id="chat-close">×</button>
+    </div>
+    
+    <!-- Token Setup Modal Trigger -->
+    <div class="token-banner" id="token-banner">
+      <span>OpenRouter API Key needed for AI Chat.</span>
+      <button id="open-config-btn">Configure Key 🔑</button>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+      <div class="message bot">
+        <p>Hello! I am your grounded Developer Assistant. I only answer questions using the directory structures, Firestore schemes, and emulator setups outlined in this portal. How can I help you today?</p>
+      </div>
+    </div>
+    
+    <div class="chat-input-area">
+      <input type="text" id="chat-input" placeholder="Ask about folders, schemas, triggers..." />
+      <button id="chat-send">Send</button>
+    </div>
+  </div>
+
+  <!-- Key Configuration Modal -->
+  <div class="modal-overlay" id="config-modal">
+    <div class="modal-card">
+      <h3>Configure OpenRouter Key</h3>
+      <p>Your OpenRouter API Key is stored securely inside your browser's session memory and never shared elsewhere.</p>
+      <input type="password" id="api-key-input" placeholder="sk-or-v1-..." />
+      <div class="modal-actions">
+        <button class="btn-cancel" id="btn-config-cancel">Cancel</button>
+        <button class="btn-save" id="btn-config-save">Save Key</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

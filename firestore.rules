@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper check
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // User profiles rules
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+
+      // User addresses subcollection
+      match /addresses/{addressId} {
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      }
+
+      // User notifications subcollection
+      match /notifications/{notificationId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        allow write: if isAuthenticated();
+      }
+    }
+
+    // Products catalog is readable by anyone, admin can modify
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAuthenticated(); // Simulating administrative edits
+    }
+
+    // Wishlist alerts collection
+    match /wishlists/{wishlistId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Orders checkout details
+    match /orders/{orderId} {
+      allow create: if isAuthenticated();
+      allow read, write: if isAuthenticated();
+    }
+
+    // Product reviews rules
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Support tickets rules
+    match /support_tickets/{ticketId} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}

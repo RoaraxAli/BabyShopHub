@@ -1,0 +1,13 @@
+{
+  "name": "babyshophub-functions",
+  "version": "1.0.0",
+  "description": "Nodemailer email trigger triggers for BabyShopHub e-commerce events",
+  "main": "index.js",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "firebase-admin": "^11.11.1",
+    "firebase-functions": "^4.5.0",
+    "nodemailer": "^6.9.13"
+  },
+  "private": true
+}
