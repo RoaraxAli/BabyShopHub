@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_provider.dart';
 import '../widgets/animated_loader.dart';
 import 'onboarding_screen.dart';
-import 'auth/login_screen.dart';
+import 'auth/welcome_screen.dart';
 import 'home_screen.dart';
 import 'admin_panel.dart';
 
@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) {
-            if (!auth.isAuthenticated) return const LoginScreen();
+            if (!auth.isAuthenticated) return const WelcomeScreen();
             return isAdmin ? const AdminPanel() : const HomeScreen();
           },
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -73,31 +73,36 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Elegant pastel background shapes
-          Positioned(
-            top: -size.height * 0.15,
-            right: -size.width * 0.15,
-            child: Container(
-              width: size.width * 0.6,
-              height: size.width * 0.6,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: theme.colorScheme.primary.withOpacity(0.05),
+          // 1. Gemini-generated beautiful background image with smooth animated opacity/scale
+          Positioned.fill(
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 1.05, end: 1.0),
+              duration: const Duration(milliseconds: 2000),
+              curve: Curves.easeOut,
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: child,
+                );
+              },
+              child: Container(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/splash_bg.png'),
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
             ),
           ),
-          Positioned(
-            bottom: -size.height * 0.1,
-            left: -size.width * 0.1,
+          
+          // Subtle soft color overlay
+          Positioned.fill(
             child: Container(
-              width: size.width * 0.5,
-              height: size.width * 0.5,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: theme.colorScheme.secondary.withOpacity(0.05),
-              ),
+              color: Colors.white.withOpacity(0.1),
             ),
           ),
+
           // Main content with elegant entry animation
           Center(
             child: TweenAnimationBuilder<double>(
@@ -136,7 +141,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onBackground.withOpacity(0.5),
+                        color: theme.colorScheme.onBackground.withOpacity(0.6),
                         letterSpacing: 2.0,
                         fontStyle: FontStyle.italic,
                         fontFamily: 'Outfit',

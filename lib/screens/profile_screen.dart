@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+import 'package:image_picker/image_picker.dart';
 import '../services/auth_provider.dart';
+import '../services/cloudinary_service.dart';
 import '../theme/theme_provider.dart';
 import '../models/user.dart';
 import 'auth/login_screen.dart';
@@ -47,7 +49,7 @@ class ProfileScreen extends StatelessWidget {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: 110.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -80,7 +82,12 @@ class ProfileScreen extends StatelessWidget {
                   CircleAvatar(
                     radius: 36,
                     backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
-                    child: Icon(Icons.person_outline_rounded, size: 36, color: theme.colorScheme.primary),
+                    backgroundImage: user.profilePicture != null
+                        ? NetworkImage(user.profilePicture!)
+                        : null,
+                    child: user.profilePicture == null
+                        ? Icon(Icons.person_outline_rounded, size: 36, color: theme.colorScheme.primary)
+                        : null,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -451,36 +458,86 @@ class _ProfileDetailsSubScreenState extends State<ProfileDetailsSubScreen> {
             children: [
               // Avatar Selection Block
               const Text(
-                'Account Avatar Selection',
+                'Profile Picture',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
               ),
               const SizedBox(height: 12),
               Center(
-                child: CircleAvatar(
-                  radius: 46,
-                  backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
-                  child: Text(
-                    UserProfile.avatars[user.avatarIndex].substring(0, 1),
-                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: List.generate(
-                  UserProfile.avatars.length,
-                  (index) => ChoiceChip(
-                    label: Text(UserProfile.avatars[index]),
-                    selected: user.avatarIndex == index,
-                    onSelected: (selected) {
-                      if (selected) {
-                        auth.updateAvatar(index);
-                      }
-                    },
-                  ),
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 56,
+                      backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+                      backgroundImage: user.profilePicture != null
+                          ? NetworkImage(user.profilePicture!)
+                          : null,
+                      child: user.profilePicture == null
+                          ? Icon(Icons.person_outline_rounded, size: 56, color: theme.colorScheme.primary)
+                          : null,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () async {
+                          final picker = ImagePicker();
+                          final source = await showDialog<ImageSource>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Select Photo Source'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, ImageSource.camera),
+                                  child: const Text('Camera'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, ImageSource.gallery),
+                                  child: const Text('Gallery'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (source == null) return;
+                          final file = await picker.pickImage(source: source);
+                          if (file == null) return;
+                          
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Uploading photo to Cloudinary...')),
+                          );
+                          
+                          final cloudinary = CloudinaryService();
+                          await cloudinary.init();
+                          final url = await cloudinary.uploadImage(file);
+                          if (url != null) {
+                            await auth.updateProfilePicture(url);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Profile picture updated successfully!'), backgroundColor: Colors.green),
+                            );
+                          } else {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Failed to upload picture.'), backgroundColor: Colors.redAccent),
+                            );
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const Divider(height: 40),

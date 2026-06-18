@@ -20,173 +20,209 @@ class ProductCard extends StatelessWidget {
     final isWish = shop.isProductWishlisted(product.id);
     final isOutOfStock = product.stock == 0;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Product Image & Wishlist overlay
-            Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.network(
-                    product.imageUrl,
-                    fit: product.category == 'Baby Food' ? BoxFit.contain : BoxFit.cover,
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return Container(
-                        color: theme.colorScheme.onBackground.withOpacity(0.04),
-                        child: const Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9F9FB), // Soft modern background color
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Product Image with category badge and wishlist overlay
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Container(
+                      color: Colors.white,
+                      child: Image.network(
+                        product.imageUrl,
+                        fit: product.category == 'Baby Food' ? BoxFit.contain : BoxFit.cover,
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: theme.colorScheme.primary.withOpacity(0.05),
+                          child: const Icon(Icons.child_care_rounded, size: 40),
+                        ),
+                      ),
+                    ),
+
+                    // Floating Category Badge top-left
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Text(
+                          product.category,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
                           ),
                         ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: theme.colorScheme.primary.withOpacity(0.05),
-                      child: const Icon(Icons.child_care_rounded, size: 40),
+                      ),
                     ),
-                  ),
 
-                  // Out of stock overlay banner
-                  if (isOutOfStock)
-                    Container(
-                      color: Colors.black.withOpacity(0.4),
-                      child: Center(
-                        child: RotationTransition(
-                          turns: AlwaysStoppedAnimation(-15 / 360),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                            color: Colors.redAccent,
-                            child: Text(
-                              'OUT OF STOCK',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
-                                letterSpacing: 0.5,
-                              ),
+                    // Out of stock overlay
+                    if (isOutOfStock)
+                      Container(
+                        color: Colors.black.withOpacity(0.4),
+                        child: const Center(
+                          child: Text(
+                            'OUT OF STOCK',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
                       ),
-                    ),
 
-                  // Wishlist button overlay
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: () => shop.toggleWishlist(product.id),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surface.withOpacity(0.85),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          isWish ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                          color: isWish ? Colors.redAccent : theme.colorScheme.onBackground.withOpacity(0.4),
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Product Details Block
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Categories name tag
-                  Text(
-                    product.category.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.8,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-
-                  // Product Title
-                  Text(
-                    product.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onBackground,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-
-                  // Star rating display
-                  Row(
-                    children: [
-                      const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${product.rating}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onBackground.withOpacity(0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Pricing & Quick Add Button
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '\$${product.price.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onBackground,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: isOutOfStock ? null : () => shop.addToCart(product),
+                    // Wishlist heart button overlay on top-right
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: GestureDetector(
+                        onTap: () => shop.toggleWishlist(product.id),
                         child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: isOutOfStock
-                                ? theme.colorScheme.onBackground.withOpacity(0.08)
-                                : theme.colorScheme.secondary.withOpacity(0.12),
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
                             shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: Icon(
-                            isOutOfStock ? Icons.block_rounded : Icons.add_rounded,
-                            color: isOutOfStock
-                                ? theme.colorScheme.onBackground.withOpacity(0.3)
-                                : theme.colorScheme.secondary,
-                            size: 16,
+                            isWish ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            color: isWish ? Colors.redAccent : Colors.black45,
+                            size: 18,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+
+              // Product details block underneath
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Rating & Specs label
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${product.rating}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: const BoxDecoration(
+                            color: Colors.black26,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          product.stock > 0 ? '${product.stock} in stock' : 'Alert when back',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: product.stock > 0 ? Colors.green : Colors.redAccent,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Pricing and Action Icon
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '\$${product.price.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: isOutOfStock ? null : () => shop.addToCart(product),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isOutOfStock ? Colors.grey[200] : Colors.black87,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.add_rounded,
+                              color: isOutOfStock ? Colors.grey : Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

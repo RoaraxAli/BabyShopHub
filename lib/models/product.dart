@@ -5,6 +5,7 @@ class Product {
   final String description;
   final double price;
   final String imageUrl;
+  final List<String> imageUrls;
   final double rating;
   final int reviewsCount;
   int stock;
@@ -19,13 +20,14 @@ class Product {
     required this.description,
     required this.price,
     required this.imageUrl,
+    List<String>? imageUrls,
     required this.rating,
     required this.reviewsCount,
     required this.stock,
     this.isWishlisted = false,
     required this.reviews,
     this.ratingDistribution = const {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0},
-  });
+  }) : imageUrls = imageUrls ?? [imageUrl];
 
   Product copyWith({
     String? id,
@@ -34,6 +36,7 @@ class Product {
     String? description,
     double? price,
     String? imageUrl,
+    List<String>? imageUrls,
     double? rating,
     int? reviewsCount,
     int? stock,
@@ -48,6 +51,7 @@ class Product {
       description: description ?? this.description,
       price: price ?? this.price,
       imageUrl: imageUrl ?? this.imageUrl,
+      imageUrls: imageUrls ?? this.imageUrls,
       rating: rating ?? this.rating,
       reviewsCount: reviewsCount ?? this.reviewsCount,
       stock: stock ?? this.stock,

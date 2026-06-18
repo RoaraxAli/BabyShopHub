@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'auth/login_screen.dart';
+import 'auth/welcome_screen.dart';
 
 class OnboardingSlide {
   final String title;
   final String description;
-  final IconData icon;
+  final String imagePath;
 
   const OnboardingSlide({
     required this.title,
     required this.description,
-    required this.icon,
+    required this.imagePath,
   });
 }
 
@@ -29,17 +29,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     OnboardingSlide(
       title: 'Premium Baby Products',
       description: 'Discover a handpicked collection of diapers, organic foods, gentle clothing, and playful toys crafted with absolute care.',
-      icon: Icons.child_care_rounded,
+      imagePath: 'assets/onboard_bg_1.png',
     ),
     OnboardingSlide(
       title: 'Express Home Delivery',
       description: 'We understand that parenting is a busy journey. Get all your essentials delivered directly to your doorstep in record time.',
-      icon: Icons.local_shipping_outlined,
+      imagePath: 'assets/onboard_bg_2.png',
     ),
     OnboardingSlide(
       title: 'Interactive AI Assistance',
       description: 'Get grounded answers on returning products, setting up safety features, and coordinating order requests directly.',
-      icon: Icons.smart_toy_outlined,
+      imagePath: 'assets/onboard_bg_3.png',
     ),
   ];
 
@@ -50,7 +50,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) => const WelcomeScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -66,213 +66,198 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Cohesive background blobs
-          Positioned(
-            top: -size.height * 0.1,
-            left: -size.width * 0.1,
-            child: Container(
-              width: size.width * 0.5,
-              height: size.width * 0.5,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: theme.colorScheme.primary.withOpacity(0.04),
-              ),
-            ),
+          // 1. Sliding Full-Screen Background Images with dark/tint overlays
+          PageView.builder(
+            controller: _pageController,
+            itemCount: _slides.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              final slide = _slides[index];
+              return Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(slide.imagePath),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Container(
+                  color: Colors.black.withOpacity(0.35),
+                ),
+              );
+            },
           ),
+
+          // 2. Persistent Top Branding (Visible on all 3 slides!)
           Positioned(
-            bottom: size.height * 0.25,
-            right: -size.width * 0.15,
-            child: Container(
-              width: size.width * 0.6,
-              height: size.width * 0.6,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: theme.colorScheme.secondary.withOpacity(0.04),
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Column(
+            top: MediaQuery.of(context).padding.top + 16,
+            left: 24,
+            right: 24,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Top header bar with Skip button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: Align(
-                    alignment: Alignment.topRight,
-                    child: TextButton(
-                      onPressed: _completeOnboarding,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
+                // Branding Badge
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Colors.white24,
+                        shape: BoxShape.circle,
                       ),
-                      child: Text(
-                        'Skip',
-                        style: TextStyle(
-                          color: theme.colorScheme.onSurface.withOpacity(0.5),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          fontFamily: 'Outfit',
-                        ),
+                      child: const Icon(
+                        Icons.child_care_rounded,
+                        color: Colors.white,
+                        size: 24,
                       ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'BabyShopHub',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'Outfit',
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                // Skip button
+                TextButton(
+                  onPressed: _completeOnboarding,
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white24,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  child: const Text(
+                    'Skip',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      fontFamily: 'Outfit',
                     ),
                   ),
                 ),
-                // Onboarding slides
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: _slides.length,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentIndex = index;
-                      });
-                    },
-                    itemBuilder: (context, index) {
-                      final slide = _slides[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                        child: Center(
-                          child: Container(
-                            constraints: const BoxConstraints(maxWidth: 450),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surface,
-                              borderRadius: BorderRadius.circular(32),
-                              border: Border.all(
-                                color: theme.colorScheme.onSurface.withOpacity(0.06),
-                                width: 1.5,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.03),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            padding: const EdgeInsets.all(32.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // Double ring design for the icon
-                                Container(
-                                  width: 120,
-                                  height: 120,
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary.withOpacity(0.06),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: theme.colorScheme.primary.withOpacity(0.12),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Container(
-                                      width: 96,
-                                      height: 96,
-                                      decoration: BoxDecoration(
-                                        color: theme.colorScheme.primary.withOpacity(0.1),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        slide.icon,
-                                        size: 48,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 36),
-                                Text(
-                                  slide.title,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w800,
-                                    color: theme.colorScheme.onSurface,
-                                    fontFamily: 'Outfit',
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                                Text(
-                                  slide.description,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                    height: 1.5,
-                                    fontFamily: 'Outfit',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                // Footer navigation elements
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Dots indicator
-                      Row(
-                        children: List.generate(
-                          _slides.length,
-                          (index) => AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.only(right: 6),
-                            width: _currentIndex == index ? 24 : 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: _currentIndex == index
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.primary.withOpacity(0.25),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Progress elevated button
-                      ElevatedButton(
-                        onPressed: () {
-                          if (_currentIndex == _slides.length - 1) {
-                            _completeOnboarding();
-                          } else {
-                            _pageController.nextPage(
-                              duration: const Duration(milliseconds: 400),
-                              curve: Curves.easeInOut,
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          elevation: 0,
-                          backgroundColor: theme.colorScheme.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: Text(
-                          _currentIndex == _slides.length - 1 ? 'Get Started' : 'Next',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Outfit',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
+            ),
+          ),
+
+          // 3. Bottom curved details sheet
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: size.height * 0.38,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(35)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 25,
+                    offset: Offset(0, -10),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(28.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Dynamic Slide Title
+                    Text(
+                      _slides[_currentIndex].title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'Outfit',
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Dynamic Slide Description
+                    Text(
+                      _slides[_currentIndex].description,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        height: 1.5,
+                        fontFamily: 'Outfit',
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Navigation dot indicators & Action button row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Dots indicator
+                        Row(
+                          children: List.generate(
+                            _slides.length,
+                            (index) => AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.only(right: 6),
+                              width: _currentIndex == index ? 24 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _currentIndex == index
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.primary.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Action button
+                        ElevatedButton(
+                          onPressed: () {
+                            if (_currentIndex == _slides.length - 1) {
+                              _completeOnboarding();
+                            } else {
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 400),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black87,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 28),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: Text(
+                            _currentIndex == _slides.length - 1 ? 'Get Started' : 'Next',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Outfit',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

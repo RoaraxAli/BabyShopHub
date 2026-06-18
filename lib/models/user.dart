@@ -3,6 +3,7 @@ class UserProfile {
   final String email;
   final String displayName;
   final int avatarIndex;
+  final String? profilePicture; // Custom uploaded profile photo via Cloudinary
   final bool isMfaEnabled;
   final bool isTotpEnabled; // Support for Authenticator app 2FA
   final String? totpSecret;  // Google Authenticator secret key
@@ -17,6 +18,7 @@ class UserProfile {
     required this.email,
     required this.displayName,
     this.avatarIndex = 0,
+    this.profilePicture,
     this.isMfaEnabled = false,
     this.isTotpEnabled = false,
     this.totpSecret,
@@ -34,6 +36,7 @@ class UserProfile {
     String? email,
     String? displayName,
     int? avatarIndex,
+    String? profilePicture,
     bool? isMfaEnabled,
     bool? isTotpEnabled,
     String? totpSecret,
@@ -48,6 +51,7 @@ class UserProfile {
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
       avatarIndex: avatarIndex ?? this.avatarIndex,
+      profilePicture: profilePicture ?? this.profilePicture,
       isMfaEnabled: isMfaEnabled ?? this.isMfaEnabled,
       isTotpEnabled: isTotpEnabled ?? this.isTotpEnabled,
       totpSecret: totpSecret ?? this.totpSecret,

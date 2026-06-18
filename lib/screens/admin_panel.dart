@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/shop_provider.dart';
@@ -30,6 +31,68 @@ class _AdminPanelState extends State<AdminPanel> {
     _SidebarItem(icon: Icons.settings_rounded, label: 'Settings'),
   ];
 
+  Widget _buildBottomNavbar(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+      height: 64,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(_sidebarItems.length, (index) {
+            final item = _sidebarItems[index];
+            final isSelected = _selectedIndex == index;
+            return InkWell(
+              onTap: () => setState(() => _selectedIndex = index),
+              borderRadius: BorderRadius.circular(20),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFFFF9EAA).withOpacity(0.12) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      item.icon,
+                      size: 20,
+                      color: isSelected ? const Color(0xFFFF9EAA) : Colors.black38,
+                    ),
+                    if (isSelected) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        item.label,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFF9EAA),
+                          fontFamily: 'Outfit',
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -46,8 +109,8 @@ class _AdminPanelState extends State<AdminPanel> {
     ];
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      drawer: isMobile ? Drawer(child: _buildSidebar(theme, auth)) : null,
+      backgroundColor: const Color(0xFFF9F9FB),
+      bottomNavigationBar: isMobile ? _buildBottomNavbar(theme) : null,
       body: Row(
         children: [
           // ─── Left Sidebar (Web/Desktop only) ────────────────────────
@@ -61,48 +124,65 @@ class _AdminPanelState extends State<AdminPanel> {
                 Container(
                   height: 64,
                   padding: const EdgeInsets.symmetric(horizontal: 28),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
                     border: Border(
-                      bottom: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+                      bottom: BorderSide(color: Color(0xFFEEEEEE)),
                     ),
                   ),
                   child: Row(
                     children: [
-                      if (isMobile) ...[
-                        Builder(
-                          builder: (ctx) => IconButton(
-                            icon: const Icon(Icons.menu_rounded),
-                            onPressed: () => Scaffold.of(ctx).openDrawer(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
                       Text(
                         _sidebarItems[_selectedIndex].label,
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 20,
                           fontWeight: FontWeight.w900,
                           color: theme.colorScheme.onSurface,
                           letterSpacing: 0.3,
+                          fontFamily: 'Outfit',
                         ),
                       ),
                       const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF9EAA).withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
+                      if (isMobile) ...[
+                        IconButton(
+                          icon: const Icon(Icons.storefront_rounded, size: 20, color: Color(0xFFFF9EAA)),
+                          onPressed: () {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(builder: (context) => const HomeScreen()),
+                            );
+                          },
+                          tooltip: 'View Storefront',
                         ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.shield_rounded, size: 14, color: Color(0xFFFF9EAA)),
-                            SizedBox(width: 4),
-                            Text('Admin', style: TextStyle(fontSize: 11, color: Color(0xFFFF9EAA), fontWeight: FontWeight.bold)),
-                          ],
+                        IconButton(
+                          icon: const Icon(Icons.logout_rounded, size: 20, color: Colors.black54),
+                          onPressed: () async {
+                            await auth.logout();
+                            if (context.mounted) {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                (route) => false,
+                              );
+                            }
+                          },
+                          tooltip: 'Logout',
                         ),
-                      ),
+                      ] else ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF9EAA).withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.shield_rounded, size: 14, color: Color(0xFFFF9EAA)),
+                              SizedBox(width: 4),
+                              Text('Admin', style: TextStyle(fontSize: 11, color: Color(0xFFFF9EAA), fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -120,7 +200,10 @@ class _AdminPanelState extends State<AdminPanel> {
     return Container(
       width: 220,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
+        color: Colors.white,
+        border: Border(
+          right: BorderSide(color: Colors.black.withOpacity(0.04), width: 1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,10 +229,11 @@ class _AdminPanelState extends State<AdminPanel> {
                 const Text(
                   'BabyHub',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Colors.black87,
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
                     letterSpacing: 0.5,
+                    fontFamily: 'Outfit',
                   ),
                 ),
               ],
@@ -160,7 +244,7 @@ class _AdminPanelState extends State<AdminPanel> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
               'Admin Control Panel',
-              style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 10, letterSpacing: 0.8),
+              style: TextStyle(color: Colors.black38, fontSize: 10, letterSpacing: 0.8, fontFamily: 'Outfit'),
             ),
           ),
           const SizedBox(height: 32),
@@ -176,7 +260,7 @@ class _AdminPanelState extends State<AdminPanel> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.06),
+                color: Colors.black.withOpacity(0.03),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -193,12 +277,12 @@ class _AdminPanelState extends State<AdminPanel> {
                       children: [
                         Text(
                           auth.currentUser?.displayName ?? 'Admin',
-                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: Colors.black87, fontSize: 12, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           auth.currentUser?.email ?? '',
-                          style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 9),
+                          style: const TextStyle(color: Colors.black38, fontSize: 9, fontFamily: 'Outfit'),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
@@ -221,7 +305,7 @@ class _AdminPanelState extends State<AdminPanel> {
                   );
                 },
                 icon: const Icon(Icons.storefront_rounded, size: 14, color: Color(0xFFFF9EAA)),
-                label: const Text('View as User', style: TextStyle(fontSize: 11, color: Color(0xFFFF9EAA))),
+                label: const Text('View as User', style: TextStyle(fontSize: 11, color: Color(0xFFFF9EAA), fontFamily: 'Outfit')),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFFFF9EAA), width: 1),
                   padding: const EdgeInsets.symmetric(vertical: 10),
@@ -246,8 +330,8 @@ class _AdminPanelState extends State<AdminPanel> {
                     );
                   }
                 },
-                icon: Icon(Icons.logout_rounded, size: 14, color: Colors.white.withOpacity(0.5)),
-                label: Text('Logout', style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.5))),
+                icon: const Icon(Icons.logout_rounded, size: 14, color: Colors.black54),
+                label: const Text('Logout', style: TextStyle(fontSize: 11, color: Colors.black54, fontFamily: 'Outfit')),
                 style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 10)),
               ),
             ),
@@ -264,26 +348,21 @@ class _AdminPanelState extends State<AdminPanel> {
     return GestureDetector(
       onTap: () {
         setState(() => _selectedIndex = index);
-        final scaffold = Scaffold.maybeOf(context);
-        if (scaffold != null && scaffold.isDrawerOpen) {
-          Navigator.of(context).pop();
-        }
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFF9EAA).withOpacity(0.15) : Colors.transparent,
+          color: isSelected ? const Color(0xFFFF9EAA).withOpacity(0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          border: isSelected ? Border.all(color: const Color(0xFFFF9EAA).withOpacity(0.3)) : null,
         ),
         child: Row(
           children: [
             Icon(
               item.icon,
               size: 18,
-              color: isSelected ? const Color(0xFFFF9EAA) : Colors.white.withOpacity(0.5),
+              color: isSelected ? const Color(0xFFFF9EAA) : Colors.black45,
             ),
             const SizedBox(width: 12),
             Text(
@@ -291,7 +370,8 @@ class _AdminPanelState extends State<AdminPanel> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+                color: isSelected ? const Color(0xFFFF9EAA) : Colors.black54,
+                fontFamily: 'Outfit',
               ),
             ),
             if (isSelected) ...[
@@ -360,7 +440,7 @@ class _DashboardSectionState extends State<_DashboardSection> {
   Widget _buildStockAlertsCard(ThemeData theme, List<Product> products, int outOfStock) {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -368,7 +448,7 @@ class _DashboardSectionState extends State<_DashboardSection> {
           children: [
             const Text('Stock Alerts', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
             const SizedBox(height: 4),
-            Text('$outOfStock products are out of stock', style: TextStyle(color: outOfStock > 0 ? Colors.redAccent : Colors.green, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Outfit')),
+            Text('$outOfStock products are out of stock', style: TextStyle(color: outOfStock > 0 ? const Color(0xFFFF9EAA) : Colors.black54, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Outfit')),
             const SizedBox(height: 16),
             ...products.where((p) => p.stock <= 5).map((p) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
@@ -377,18 +457,18 @@ class _DashboardSectionState extends State<_DashboardSection> {
                   Container(
                     width: 8, height: 8,
                     decoration: BoxDecoration(
-                      color: p.stock == 0 ? Colors.redAccent : Colors.orange,
+                      color: p.stock == 0 ? const Color(0xFFFF9EAA) : Colors.black26,
                       shape: BoxShape.circle,
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(child: Text(p.name, style: const TextStyle(fontSize: 12, fontFamily: 'Outfit'), overflow: TextOverflow.ellipsis)),
-                  Text('${p.stock} left', style: TextStyle(fontSize: 11, color: p.stock == 0 ? Colors.redAccent : Colors.orange, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+                  Text('${p.stock} left', style: TextStyle(fontSize: 11, color: p.stock == 0 ? const Color(0xFFFF9EAA) : Colors.black45, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
                 ],
               ),
             )),
             if (products.where((p) => p.stock <= 5).isEmpty)
-              const Text('All products are well-stocked!', style: TextStyle(color: Colors.green, fontSize: 13, fontFamily: 'Outfit')),
+              const Text('All products are well-stocked!', style: TextStyle(color: Colors.black54, fontSize: 13, fontFamily: 'Outfit')),
           ],
         ),
       ),
@@ -398,7 +478,7 @@ class _DashboardSectionState extends State<_DashboardSection> {
   Widget _buildQuickActionsCard(BuildContext context, ThemeData theme) {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -406,11 +486,26 @@ class _DashboardSectionState extends State<_DashboardSection> {
           children: [
             const Text('Quick Actions', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
             const SizedBox(height: 16),
-            _quickAction(context, Icons.add_box_rounded, 'Add New Product', 'Add a product to the store', const Color(0xFF6C63FF)),
+            _quickAction(context, Icons.add_box_rounded, 'Add New Product', 'Add a product to the store', const Color(0xFFFF9EAA),
+              onTap: () {
+                final adminPanel = context.findAncestorStateOfType<_AdminPanelState>();
+                if (adminPanel != null) adminPanel.setState(() => adminPanel._selectedIndex = 1);
+              },
+            ),
             const SizedBox(height: 10),
-            _quickAction(context, Icons.receipt_long_rounded, 'View All Orders', 'Review all customer orders', const Color(0xFF00BFA5)),
+            _quickAction(context, Icons.receipt_long_rounded, 'View All Orders', 'Review all customer orders', const Color(0xFFFF9EAA),
+              onTap: () {
+                final adminPanel = context.findAncestorStateOfType<_AdminPanelState>();
+                if (adminPanel != null) adminPanel.setState(() => adminPanel._selectedIndex = 2);
+              },
+            ),
             const SizedBox(height: 10),
-            _quickAction(context, Icons.people_rounded, 'Manage Users', 'View and manage all users', const Color(0xFFFF7043)),
+            _quickAction(context, Icons.people_rounded, 'Manage Users', 'View and manage all users', const Color(0xFFFF9EAA),
+              onTap: () {
+                final adminPanel = context.findAncestorStateOfType<_AdminPanelState>();
+                if (adminPanel != null) adminPanel.setState(() => adminPanel._selectedIndex = 3);
+              },
+            ),
           ],
         ),
       ),
@@ -431,6 +526,15 @@ class _DashboardSectionState extends State<_DashboardSection> {
     final int crossAxisCount = isPhone ? (size.width < 450 ? 1 : 2) : 4;
     final double childAspectRatio = isPhone ? (size.width < 450 ? 3.0 : 2.4) : 2.2;
 
+    // Calculate category counts dynamically
+    final Map<String, int> catCounts = {
+      'Diapers': products.where((p) => p.category == 'Diapers').length,
+      'Baby Food': products.where((p) => p.category == 'Baby Food').length,
+      'Clothing': products.where((p) => p.category == 'Clothing').length,
+      'Toys': products.where((p) => p.category == 'Toys').length,
+      'Bath': products.where((p) => p.category == 'Bath').length,
+    };
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(28),
       child: Column(
@@ -446,13 +550,36 @@ class _DashboardSectionState extends State<_DashboardSection> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              _buildStatCard(theme, 'Total Products', '${products.length}', Icons.inventory_2_rounded, const Color(0xFF6C63FF)),
-              _buildStatCard(theme, 'Total Orders', '$_totalOrders', Icons.receipt_long_rounded, const Color(0xFF00BFA5)),
-              _buildStatCard(theme, 'Total Users', '$_totalUsers', Icons.people_rounded, const Color(0xFFFF7043)),
+              _buildStatCard(theme, 'Total Products', '${products.length}', Icons.inventory_2_rounded, const Color(0xFFFF9EAA)),
+              _buildStatCard(theme, 'Total Orders', '$_totalOrders', Icons.receipt_long_rounded, const Color(0xFFFF9EAA)),
+              _buildStatCard(theme, 'Total Users', '$_totalUsers', Icons.people_rounded, const Color(0xFFFF9EAA)),
               _buildStatCard(theme, 'Total Revenue', '\$${_totalRevenue.toStringAsFixed(2)}', Icons.attach_money_rounded, const Color(0xFFFF9EAA)),
             ],
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
+          
+          // Analytics Charts
+          if (isPhone) ...[
+            _RevenueTrendChart(revenueData: const [120, 350, 290, 580, 890, 670, 1100], labels: const ['M', 'T', 'W', 'T', 'F', 'S', 'S']),
+            const SizedBox(height: 16),
+            _CategoryDistributionChart(categoryCounts: catCounts),
+          ] else ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _RevenueTrendChart(revenueData: const [120, 350, 290, 580, 890, 670, 1100], labels: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _CategoryDistributionChart(categoryCounts: catCounts),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 24),
+
           if (isPhone) ...[
             _buildStockAlertsCard(theme, products, outOfStock),
             const SizedBox(height: 16),
@@ -472,29 +599,32 @@ class _DashboardSectionState extends State<_DashboardSection> {
     );
   }
 
-  Widget _quickAction(BuildContext context, IconData icon, String title, String subtitle, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-              ],
+  Widget _quickAction(BuildContext context, IconData icon, String title, String subtitle, Color color, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9F9FB),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFFFF9EAA), size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+                  Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.black38, fontFamily: 'Outfit')),
+                ],
+              ),
             ),
-          ),
-          Icon(Icons.chevron_right_rounded, color: color, size: 16),
-        ],
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFFFF9EAA), size: 16),
+          ],
+        ),
       ),
     );
   }
@@ -504,9 +634,8 @@ class _DashboardSectionState extends State<_DashboardSection> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: color.withOpacity(0.2)),
       ),
-      color: color.withOpacity(0.06),
+      color: const Color(0xFFF9F9FB),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
@@ -515,7 +644,7 @@ class _DashboardSectionState extends State<_DashboardSection> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
+                color: color.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 18),
@@ -536,6 +665,7 @@ class _DashboardSectionState extends State<_DashboardSection> {
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                         color: theme.colorScheme.onSurface,
+                        fontFamily: 'Outfit',
                       ),
                     ),
                   ),
@@ -545,6 +675,7 @@ class _DashboardSectionState extends State<_DashboardSection> {
                       fontSize: 10,
                       color: theme.colorScheme.onSurface.withOpacity(0.5),
                       fontWeight: FontWeight.w600,
+                      fontFamily: 'Outfit',
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
@@ -831,10 +962,10 @@ class _ProductsSection extends StatelessWidget {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: theme.colorScheme.primary.withOpacity(0.08),
+                                            color: const Color(0xFFFF9EAA).withOpacity(0.08),
                                             borderRadius: BorderRadius.circular(6),
                                           ),
-                                          child: Text(p.category, style: TextStyle(fontSize: 10, color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+                                          child: Text(p.category, style: TextStyle(fontSize: 10, color: const Color(0xFFFF9EAA), fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
                                         ),
                                         const SizedBox(width: 8),
                                         Text('\$${p.price.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, fontFamily: 'Outfit', color: Color(0xFFFF9EAA))),
@@ -846,13 +977,13 @@ class _ProductsSection extends StatelessWidget {
                                         Container(
                                           width: 7, height: 7,
                                           decoration: BoxDecoration(
-                                            color: p.stock == 0 ? Colors.redAccent : p.stock <= 5 ? Colors.orange : Colors.green,
+                                            color: p.stock == 0 ? const Color(0xFFFF9EAA) : Colors.black26,
                                             shape: BoxShape.circle,
                                           ),
                                         ),
                                         const SizedBox(width: 6),
                                         Text(p.stock == 0 ? 'Out of stock' : '${p.stock} in stock',
-                                          style: TextStyle(fontSize: 11, color: p.stock == 0 ? Colors.redAccent : p.stock <= 5 ? Colors.orange : Colors.green, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
+                                          style: TextStyle(fontSize: 11, color: p.stock == 0 ? const Color(0xFFFF9EAA) : Colors.black54, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
                                         ),
                                       ],
                                     ),
@@ -863,14 +994,14 @@ class _ProductsSection extends StatelessWidget {
                                 children: [
                                   IconButton(
                                     icon: const Icon(Icons.edit_rounded, size: 20),
-                                    color: const Color(0xFF6C63FF),
+                                    color: const Color(0xFFFF9EAA),
                                     onPressed: () => _showProductForm(context, product: p),
                                     constraints: const BoxConstraints(),
                                     padding: const EdgeInsets.all(8),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.delete_rounded, size: 20),
-                                    color: Colors.redAccent,
+                                    color: Colors.black45,
                                     constraints: const BoxConstraints(),
                                     padding: const EdgeInsets.all(8),
                                     onPressed: () {
@@ -892,7 +1023,7 @@ class _ProductsSection extends StatelessWidget {
                                                 }
                                                 if (ctx.mounted) Navigator.of(ctx).pop();
                                               },
-                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, elevation: 0),
+                                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF9EAA), foregroundColor: Colors.white, elevation: 0),
                                               child: const Text('Delete', style: TextStyle(fontFamily: 'Outfit')),
                                             ),
                                           ],
@@ -910,13 +1041,13 @@ class _ProductsSection extends StatelessWidget {
                   )
                 : Card(
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5))),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     child: Column(
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                            color: const Color(0xFFF9F9FB),
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                           ),
                           child: const Row(
@@ -933,7 +1064,7 @@ class _ProductsSection extends StatelessWidget {
                         Expanded(
                           child: ListView.separated(
                             itemCount: products.length,
-                            separatorBuilder: (_, __) => Divider(height: 1, color: theme.colorScheme.outlineVariant.withOpacity(0.3)),
+                            separatorBuilder: (_, __) => Divider(height: 1, color: Colors.black.withOpacity(0.04)),
                             itemBuilder: (context, index) {
                               final p = products[index];
                               return Padding(
@@ -957,12 +1088,12 @@ class _ProductsSection extends StatelessWidget {
                                           Container(
                                             width: 8, height: 8,
                                             decoration: BoxDecoration(
-                                              color: p.stock == 0 ? Colors.redAccent : p.stock <= 5 ? Colors.orange : Colors.green,
+                                              color: p.stock == 0 ? const Color(0xFFFF9EAA) : Colors.black26,
                                               shape: BoxShape.circle,
                                             ),
                                           ),
                                           const SizedBox(width: 6),
-                                          Text('${p.stock}', style: TextStyle(fontSize: 13, color: p.stock == 0 ? Colors.redAccent : theme.colorScheme.onSurface, fontWeight: FontWeight.w600, fontFamily: 'Outfit')),
+                                          Text('${p.stock}', style: TextStyle(fontSize: 13, color: p.stock == 0 ? const Color(0xFFFF9EAA) : theme.colorScheme.onSurface, fontWeight: FontWeight.w600, fontFamily: 'Outfit')),
                                         ],
                                       ),
                                     ),
@@ -972,14 +1103,14 @@ class _ProductsSection extends StatelessWidget {
                                         children: [
                                           IconButton(
                                             icon: const Icon(Icons.edit_rounded, size: 18),
-                                            color: const Color(0xFF6C63FF),
+                                            color: const Color(0xFFFF9EAA),
                                             tooltip: 'Edit',
                                             padding: EdgeInsets.zero,
                                             onPressed: () => _showProductForm(context, product: p),
                                           ),
                                           IconButton(
                                             icon: const Icon(Icons.delete_rounded, size: 18),
-                                            color: Colors.redAccent,
+                                            color: Colors.black45,
                                             tooltip: 'Delete',
                                             padding: EdgeInsets.zero,
                                             onPressed: () {
@@ -1088,22 +1219,12 @@ class _OrdersSectionState extends State<_OrdersSection> {
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'Pending':
-        return Colors.orange;
-      case 'Processing':
-        return Colors.blue;
-      case 'Packed':
-        return Colors.indigo;
-      case 'Shipped':
-        return Colors.teal;
-      case 'Out For Delivery':
-        return Colors.deepPurple;
       case 'Delivered':
-        return Colors.green;
+        return const Color(0xFFFF9EAA);
       case 'Cancelled':
-        return Colors.redAccent;
+        return Colors.black38;
       default:
-        return Colors.grey;
+        return Colors.black87;
     }
   }
 
@@ -1324,7 +1445,7 @@ class _OrdersSectionState extends State<_OrdersSection> {
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+
                         ),
                         child: InkWell(
                           onTap: () => _showOrderManageDialog(context, order),
@@ -1340,10 +1461,10 @@ class _OrdersSectionState extends State<_OrdersSection> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF00BFA5).withOpacity(0.1),
+                                        color: Colors.black.withOpacity(0.04),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: Text('#$orderId', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF00BFA5), fontFamily: 'Outfit')),
+                                      child: Text('#$orderId', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87, fontFamily: 'Outfit')),
                                     ),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1418,13 +1539,13 @@ class _OrdersSectionState extends State<_OrdersSection> {
                   )
                 : Card(
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5))),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     child: Column(
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                            color: const Color(0xFFF9F9FB),
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                           ),
                           child: const Row(
@@ -1441,7 +1562,7 @@ class _OrdersSectionState extends State<_OrdersSection> {
                         Expanded(
                           child: ListView.separated(
                             itemCount: _orders.length,
-                            separatorBuilder: (_, __) => Divider(height: 1, color: theme.colorScheme.outlineVariant.withOpacity(0.3)),
+                            separatorBuilder: (_, __) => Divider(height: 1, color: Colors.black.withOpacity(0.04)),
                             itemBuilder: (context, index) {
                               final order = _orders[index];
                               final orderId = (order['id'] as String? ?? '').substring(0, 8).toUpperCase();
@@ -1470,10 +1591,10 @@ class _OrdersSectionState extends State<_OrdersSection> {
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF00BFA5).withOpacity(0.1),
+                                            color: Colors.black.withOpacity(0.04),
                                             borderRadius: BorderRadius.circular(6),
                                           ),
-                                          child: Text('#$orderId', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF00BFA5), fontFamily: 'Outfit')),
+                                          child: Text('#$orderId', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black87, fontFamily: 'Outfit')),
                                         ),
                                       ),
                                       Expanded(flex: 2, child: Text(email, style: const TextStyle(fontSize: 12, fontFamily: 'Outfit'), overflow: TextOverflow.ellipsis)),
@@ -1559,14 +1680,97 @@ class _UsersSectionState extends State<_UsersSection> {
     }
   }
 
-  Future<void> _toggleUserRole(String uid, String currentRole) async {
-    final newRole = currentRole == 'admin' ? 'user' : 'admin';
-    try {
-      await FirebaseFirestore.instance.collection('users').doc(uid).update({'role': newRole});
-      _loadUsers();
-    } catch (e) {
-      debugPrint('[ADMIN USERS] Failed to toggle role: $e');
-    }
+  void _showUserForm(BuildContext context, {Map<String, dynamic>? user}) {
+    final nameCtrl = TextEditingController(text: user?['displayName'] ?? '');
+    final emailCtrl = TextEditingController(text: user?['email'] ?? '');
+    String selectedRole = user?['role'] ?? 'user';
+    final formKey = GlobalKey<FormState>();
+    final isNew = user == null;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(isNew ? 'Add New User' : 'Edit User', style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+            content: SizedBox(
+              width: 400,
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: nameCtrl,
+                      decoration: const InputDecoration(labelText: 'Display Name', prefixIcon: Icon(Icons.person_outline_rounded)),
+                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                      style: const TextStyle(fontSize: 14, fontFamily: 'Outfit'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: emailCtrl,
+                      decoration: const InputDecoration(labelText: 'Email Address', prefixIcon: Icon(Icons.mail_outline_rounded)),
+                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                      style: const TextStyle(fontSize: 14, fontFamily: 'Outfit'),
+                      enabled: isNew,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: selectedRole,
+                      items: const [
+                        DropdownMenuItem(value: 'user', child: Text('User', style: TextStyle(fontFamily: 'Outfit'))),
+                        DropdownMenuItem(value: 'admin', child: Text('Admin', style: TextStyle(fontFamily: 'Outfit'))),
+                      ],
+                      onChanged: (v) => setDialogState(() => selectedRole = v ?? selectedRole),
+                      decoration: const InputDecoration(labelText: 'Role', prefixIcon: Icon(Icons.shield_outlined)),
+                      style: const TextStyle(fontSize: 14, fontFamily: 'Outfit'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel', style: TextStyle(fontFamily: 'Outfit'))),
+              ElevatedButton.icon(
+                icon: Icon(isNew ? Icons.person_add_rounded : Icons.save_rounded, size: 16),
+                label: Text(isNew ? 'Add User' : 'Save Changes', style: const TextStyle(fontFamily: 'Outfit')),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF9EAA), foregroundColor: Colors.white, elevation: 0),
+                onPressed: () async {
+                  if (!formKey.currentState!.validate()) return;
+                  
+                  final data = {
+                    'displayName': nameCtrl.text.trim(),
+                    'email': emailCtrl.text.trim(),
+                    'role': selectedRole,
+                    if (isNew) 'createdAt': FieldValue.serverTimestamp(),
+                    if (isNew) 'avatarIndex': 0,
+                    if (isNew) 'isTotpEnabled': false,
+                  };
+
+                  try {
+                    if (isNew) {
+                      final docRef = FirebaseFirestore.instance.collection('users').doc();
+                      data['uid'] = docRef.id;
+                      await docRef.set(data);
+                    } else {
+                      await FirebaseFirestore.instance.collection('users').doc(user['id']).update({
+                        'displayName': nameCtrl.text.trim(),
+                        'role': selectedRole,
+                      });
+                    }
+                    _loadUsers();
+                  } catch (e) {
+                    debugPrint('[ADMIN USERS] Save failed: $e');
+                  }
+                  if (ctx.mounted) Navigator.of(ctx).pop();
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -1600,6 +1804,13 @@ class _UsersSectionState extends State<_UsersSection> {
             children: [
               Text('${_users.length} registered users', style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.5), fontFamily: 'Outfit')),
               const Spacer(),
+              ElevatedButton.icon(
+                onPressed: () => _showUserForm(context),
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: const Text('Add User', style: TextStyle(fontFamily: 'Outfit')),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF9EAA), foregroundColor: Colors.white, elevation: 0),
+              ),
+              const SizedBox(width: 12),
               IconButton(onPressed: _loadUsers, icon: const Icon(Icons.refresh_rounded), tooltip: 'Refresh'),
             ],
           ),
@@ -1622,7 +1833,7 @@ class _UsersSectionState extends State<_UsersSection> {
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(16),
@@ -1630,11 +1841,11 @@ class _UsersSectionState extends State<_UsersSection> {
                             children: [
                               CircleAvatar(
                                 radius: 24,
-                                backgroundColor: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.2) : Colors.blue.withOpacity(0.1),
+                                backgroundColor: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.2) : Colors.black.withOpacity(0.05),
                                 child: Icon(
                                   isAdmin ? Icons.admin_panel_settings_rounded : Icons.person_rounded,
                                   size: 22,
-                                  color: isAdmin ? const Color(0xFFFF9EAA) : Colors.blue,
+                                  color: isAdmin ? const Color(0xFFFF9EAA) : Colors.black54,
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -1655,37 +1866,51 @@ class _UsersSectionState extends State<_UsersSection> {
                                     ),
                                     const SizedBox(height: 8),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                           decoration: BoxDecoration(
-                                            color: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.12) : Colors.blue.withOpacity(0.08),
+                                            color: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.12) : Colors.black.withOpacity(0.04),
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
                                             isAdmin ? 'Admin' : 'User',
-                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isAdmin ? const Color(0xFFFF9EAA) : Colors.blue, fontFamily: 'Outfit'),
+                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isAdmin ? const Color(0xFFFF9EAA) : Colors.black54, fontFamily: 'Outfit'),
                                           ),
                                         ),
-                                        if (!isCurrentUser)
-                                          TextButton.icon(
-                                            onPressed: () => _toggleUserRole(uid, role),
-                                            icon: Icon(isAdmin ? Icons.person_remove_rounded : Icons.admin_panel_settings_rounded, size: 14),
-                                            label: Text(isAdmin ? 'Revoke Admin' : 'Make Admin', style: const TextStyle(fontSize: 11, fontFamily: 'Outfit')),
-                                            style: TextButton.styleFrom(
-                                              foregroundColor: isAdmin ? Colors.redAccent : const Color(0xFFFF9EAA),
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              minimumSize: Size.zero,
-                                            ),
-                                          )
-                                        else
-                                          Text(
-                                            'Cannot edit self',
-                                            style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withOpacity(0.3), fontFamily: 'Outfit'),
-                                          ),
                                       ],
                                     ),
+                                    const SizedBox(height: 8),
+                                    if (!isCurrentUser)
+                                      Row(
+                                        children: [
+                                          _userActionBtn(
+                                            icon: Icons.edit_rounded,
+                                            color: const Color(0xFFFF9EAA),
+                                            tooltip: 'Edit User',
+                                            onTap: () => _showUserForm(context, user: user),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          _userActionBtn(
+                                            icon: Icons.delete_rounded,
+                                            color: Colors.black38,
+                                            tooltip: 'Delete User',
+                                            onTap: () => _deleteUser(context, uid, name),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          _userActionBtn(
+                                            icon: isAdmin ? Icons.person_remove_rounded : Icons.shield_rounded,
+                                            color: isAdmin ? Colors.black38 : const Color(0xFFFF9EAA),
+                                            tooltip: isAdmin ? 'Revoke Admin' : 'Make Admin',
+                                            onTap: () => _toggleUserRole(uid, role),
+                                          ),
+                                        ],
+                                      )
+                                    else
+                                      Text(
+                                        'Cannot edit self',
+                                        style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withOpacity(0.3), fontFamily: 'Outfit'),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -1697,13 +1922,13 @@ class _UsersSectionState extends State<_UsersSection> {
                   )
                 : Card(
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5))),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     child: Column(
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                            color: const Color(0xFFF9F9FB),
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                           ),
                           child: const Row(
@@ -1712,14 +1937,14 @@ class _UsersSectionState extends State<_UsersSection> {
                               Expanded(flex: 2, child: Text('Display Name', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'Outfit'))),
                               Expanded(flex: 3, child: Text('Email', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'Outfit'))),
                               Expanded(child: Text('Role', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'Outfit'))),
-                              SizedBox(width: 120, child: Text('Manage Role', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'Outfit'))),
+                              SizedBox(width: 180, child: Text('Actions', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'Outfit'))),
                             ],
                           ),
                         ),
                         Expanded(
                           child: ListView.separated(
                             itemCount: _users.length,
-                            separatorBuilder: (_, __) => Divider(height: 1, color: theme.colorScheme.outlineVariant.withOpacity(0.3)),
+                            separatorBuilder: (_, __) => Divider(height: 1, color: Colors.black.withOpacity(0.04)),
                             itemBuilder: (context, index) {
                               final user = _users[index];
                               final uid = user['id'] as String? ?? '';
@@ -1735,11 +1960,11 @@ class _UsersSectionState extends State<_UsersSection> {
                                   children: [
                                     CircleAvatar(
                                       radius: 16,
-                                      backgroundColor: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.2) : Colors.blue.withOpacity(0.1),
+                                      backgroundColor: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.2) : Colors.black.withOpacity(0.05),
                                       child: Icon(
                                         isAdmin ? Icons.admin_panel_settings_rounded : Icons.person_rounded,
                                         size: 16,
-                                        color: isAdmin ? const Color(0xFFFF9EAA) : Colors.blue,
+                                        color: isAdmin ? const Color(0xFFFF9EAA) : Colors.black54,
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -1756,27 +1981,42 @@ class _UsersSectionState extends State<_UsersSection> {
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                         decoration: BoxDecoration(
-                                          color: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.12) : Colors.blue.withOpacity(0.08),
+                                          color: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.12) : Colors.black.withOpacity(0.04),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
                                           isAdmin ? 'Admin' : 'User',
-                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isAdmin ? const Color(0xFFFF9EAA) : Colors.blue, fontFamily: 'Outfit'),
+                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isAdmin ? const Color(0xFFFF9EAA) : Colors.black54, fontFamily: 'Outfit'),
                                         ),
                                       ),
                                     ),
                                     SizedBox(
-                                      width: 120,
+                                      width: 180,
                                       child: isCurrentUser
                                           ? Text('Cannot edit self', style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withOpacity(0.3), fontFamily: 'Outfit'))
-                                          : TextButton.icon(
-                                              onPressed: () => _toggleUserRole(uid, role),
-                                              icon: Icon(isAdmin ? Icons.person_remove_rounded : Icons.admin_panel_settings_rounded, size: 14),
-                                              label: Text(isAdmin ? 'Revoke Admin' : 'Make Admin', style: const TextStyle(fontSize: 11, fontFamily: 'Outfit')),
-                                              style: TextButton.styleFrom(
-                                                foregroundColor: isAdmin ? Colors.redAccent : const Color(0xFFFF9EAA),
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              ),
+                                          : Row(
+                                              children: [
+                                                _userActionBtn(
+                                                  icon: Icons.edit_rounded,
+                                                  color: const Color(0xFFFF9EAA),
+                                                  tooltip: 'Edit',
+                                                  onTap: () => _showUserForm(context, user: user),
+                                                ),
+                                                const SizedBox(width: 2),
+                                                _userActionBtn(
+                                                  icon: Icons.delete_rounded,
+                                                  color: Colors.black38,
+                                                  tooltip: 'Delete',
+                                                  onTap: () => _deleteUser(context, uid, name),
+                                                ),
+                                                const SizedBox(width: 2),
+                                                _userActionBtn(
+                                                  icon: isAdmin ? Icons.person_remove_rounded : Icons.shield_rounded,
+                                                  color: isAdmin ? Colors.black38 : const Color(0xFFFF9EAA),
+                                                  tooltip: isAdmin ? 'Revoke Admin' : 'Make Admin',
+                                                  onTap: () => _toggleUserRole(uid, role),
+                                                ),
+                                              ],
                                             ),
                                     ),
                                   ],
@@ -1790,6 +2030,93 @@ class _UsersSectionState extends State<_UsersSection> {
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _toggleUserRole(String uid, String currentRole) async {
+    final newRole = currentRole == 'admin' ? 'user' : 'admin';
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({'role': newRole});
+      await _loadUsers();
+    } catch (e) {
+      debugPrint('[ADMIN USERS] Toggle role failed: $e');
+    }
+  }
+
+  Future<void> _deleteUser(BuildContext context, String uid, String name) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete User', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+        content: RichText(
+          text: TextSpan(
+            style: const TextStyle(fontFamily: 'Outfit', fontSize: 14, color: Colors.black87),
+            children: [
+              const TextSpan(text: 'Are you sure you want to permanently delete '),
+              TextSpan(text: name, style: const TextStyle(fontWeight: FontWeight.bold)),
+              const TextSpan(text: '? This action cannot be undone.'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel', style: TextStyle(fontFamily: 'Outfit')),
+          ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.delete_forever_rounded, size: 16),
+            label: const Text('Delete', style: TextStyle(fontFamily: 'Outfit')),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).delete();
+      await _loadUsers();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('User "$name" deleted successfully'),
+            backgroundColor: const Color(0xFFFF9EAA),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('[ADMIN USERS] Delete failed: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete user: $e')),
+        );
+      }
+    }
+  }
+
+  Widget _userActionBtn({required IconData icon, required Color color, required String tooltip, required VoidCallback onTap}) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: color),
+        ),
       ),
     );
   }
@@ -1885,7 +2212,7 @@ class _SupportSectionState extends State<_SupportSection> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: (status == 'Open' ? Colors.green : Colors.grey).withOpacity(0.12),
+                              color: (status == 'Open' ? const Color(0xFFFF9EAA) : Colors.black12).withOpacity(0.12),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -1893,7 +2220,7 @@ class _SupportSectionState extends State<_SupportSection> {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: status == 'Open' ? Colors.green : Colors.grey,
+                                color: status == 'Open' ? const Color(0xFFFF9EAA) : Colors.black54,
                               ),
                             ),
                           ),
@@ -1919,7 +2246,7 @@ class _SupportSectionState extends State<_SupportSection> {
                           
                           return Card(
                             margin: const EdgeInsets.only(bottom: 8),
-                            color: sender == 'Admin' ? const Color(0xFF6C63FF).withOpacity(0.05) : Colors.grey.shade100,
+                            color: sender == 'Admin' ? const Color(0xFFFF9EAA).withOpacity(0.08) : Colors.black.withOpacity(0.03),
                             child: Padding(
                               padding: const EdgeInsets.all(12.0),
                               child: Column(
@@ -2099,7 +2426,7 @@ class _SupportSectionState extends State<_SupportSection> {
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+
                         ),
                         child: InkWell(
                           onTap: () => _showTicketDetailsDialog(context, ticket),
@@ -2124,7 +2451,7 @@ class _SupportSectionState extends State<_SupportSection> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: (status == 'Open' ? Colors.green : Colors.grey).withOpacity(0.12),
+                                        color: (status == 'Open' ? const Color(0xFFFF9EAA) : Colors.black12).withOpacity(0.12),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
@@ -2132,7 +2459,7 @@ class _SupportSectionState extends State<_SupportSection> {
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
-                                          color: status == 'Open' ? Colors.green : Colors.grey,
+                                          color: status == 'Open' ? const Color(0xFFFF9EAA) : Colors.black54,
                                           fontFamily: 'Outfit',
                                         ),
                                       ),
@@ -2176,13 +2503,13 @@ class _SupportSectionState extends State<_SupportSection> {
                   )
                 : Card(
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5))),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     child: Column(
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                            color: const Color(0xFFF9F9FB),
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                           ),
                           child: const Row(
@@ -2197,7 +2524,7 @@ class _SupportSectionState extends State<_SupportSection> {
                         Expanded(
                           child: ListView.separated(
                             itemCount: _tickets.length,
-                            separatorBuilder: (_, __) => Divider(height: 1, color: theme.colorScheme.outlineVariant.withOpacity(0.3)),
+                            separatorBuilder: (_, __) => Divider(height: 1, color: Colors.black.withOpacity(0.04)),
                             itemBuilder: (context, index) {
                               final ticket = _tickets[index];
                               final name = ticket['name'] ?? 'N/A';
@@ -2219,7 +2546,7 @@ class _SupportSectionState extends State<_SupportSection> {
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: (status == 'Open' ? Colors.green : Colors.grey).withOpacity(0.12),
+                                            color: (status == 'Open' ? const Color(0xFFFF9EAA) : Colors.black12).withOpacity(0.12),
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
@@ -2227,7 +2554,7 @@ class _SupportSectionState extends State<_SupportSection> {
                                             style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.bold,
-                                              color: status == 'Open' ? Colors.green : Colors.grey,
+                                              color: status == 'Open' ? const Color(0xFFFF9EAA) : Colors.black54,
                                               fontFamily: 'Outfit',
                                             ),
                                           ),
@@ -2263,41 +2590,73 @@ class _SettingsSection extends StatefulWidget {
 
 class _SettingsSectionState extends State<_SettingsSection> {
   final _formKey = GlobalKey<FormState>();
+  final _storeNameController = TextEditingController();
+  final _supportEmailController = TextEditingController();
+  final _contactPhoneController = TextEditingController();
+  final _currencySymbolController = TextEditingController();
   final _cloudNameController = TextEditingController();
   final _uploadPresetController = TextEditingController();
   final _cloudinary = CloudinaryService();
+  
   bool _loading = true;
+  bool _enableReviews = true;
+  bool _showOutOfStock = false;
+  bool _requireEmailVerification = false;
+  bool _enableFreeShipping = true;
 
   @override
   void initState() {
     super.initState();
-    _loadCloudinarySettings();
+    _loadSettings();
   }
 
-  Future<void> _loadCloudinarySettings() async {
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
     await _cloudinary.init();
     if (mounted) {
       setState(() {
+        _storeNameController.text = prefs.getString('store_name') ?? 'BabyShopHub';
+        _supportEmailController.text = prefs.getString('support_email') ?? 'support@babyshophub.com';
+        _contactPhoneController.text = prefs.getString('contact_phone') ?? '+1 (555) 019-2834';
+        _currencySymbolController.text = prefs.getString('currency_symbol') ?? '\$';
+        _enableReviews = prefs.getBool('enable_reviews') ?? true;
+        _showOutOfStock = prefs.getBool('show_out_of_stock') ?? false;
+        _requireEmailVerification = prefs.getBool('require_email_verification') ?? false;
+        _enableFreeShipping = prefs.getBool('enable_free_shipping') ?? true;
+        
         _cloudNameController.text = _cloudinary.cloudName;
         _uploadPresetController.text = _cloudinary.uploadPreset;
+        
         _loading = false;
       });
     }
   }
 
-  Future<void> _saveSettings() async {
+  Future<void> _saveAllSettings() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('store_name', _storeNameController.text.trim());
+    await prefs.setString('support_email', _supportEmailController.text.trim());
+    await prefs.setString('contact_phone', _contactPhoneController.text.trim());
+    await prefs.setString('currency_symbol', _currencySymbolController.text.trim());
+    await prefs.setBool('enable_reviews', _enableReviews);
+    await prefs.setBool('show_out_of_stock', _showOutOfStock);
+    await prefs.setBool('require_email_verification', _requireEmailVerification);
+    await prefs.setBool('enable_free_shipping', _enableFreeShipping);
+    
     await _cloudinary.updateCredentials(
       _cloudNameController.text.trim(),
       _uploadPresetController.text.trim(),
     );
+    
     if (mounted) {
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cloudinary Settings saved successfully!'),
-          backgroundColor: Colors.green,
+          content: Text('All Settings saved successfully!'),
+          backgroundColor: Color(0xFFFF9EAA),
         ),
       );
     }
@@ -2313,87 +2672,513 @@ class _SettingsSectionState extends State<_SettingsSection> {
       padding: const EdgeInsets.all(28),
       child: Center(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Cloudinary API Configuration',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
-                  fontFamily: 'Outfit',
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Configure your Cloudinary credentials here to enable seamless image uploads in product forms. Unsigned upload preset is required for security on client-side requests.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                  fontFamily: 'Outfit',
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                    color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+          constraints: const BoxConstraints(maxWidth: 700),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Store Settings & Preferences',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                    fontFamily: 'Outfit',
                   ),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Form(
-                    key: _formKey,
+                const SizedBox(height: 6),
+                Text(
+                  'Configure your storefront branding, core policies, and storage configurations below.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    fontFamily: 'Outfit',
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // 1. General Settings Card
+                _buildSectionHeader('General Info & Branding', Icons.storefront_rounded),
+                const SizedBox(height: 12),
+                Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextFormField(
+                          controller: _storeNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Store Name',
+                            prefixIcon: Icon(Icons.edit_note_rounded),
+                          ),
+                          style: const TextStyle(fontFamily: 'Outfit', fontSize: 14),
+                          validator: (val) => val == null || val.trim().isEmpty ? 'Enter Store Name' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _supportEmailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Support Email Address',
+                            prefixIcon: Icon(Icons.mail_outline_rounded),
+                          ),
+                          style: const TextStyle(fontFamily: 'Outfit', fontSize: 14),
+                          validator: (val) => val == null || val.trim().isEmpty ? 'Enter Support Email' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                controller: _contactPhoneController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Contact Phone Number',
+                                  prefixIcon: Icon(Icons.phone_iphone_rounded),
+                                ),
+                                style: const TextStyle(fontFamily: 'Outfit', fontSize: 14),
+                                validator: (val) => val == null || val.trim().isEmpty ? 'Enter Phone Number' : null,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _currencySymbolController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Currency Symbol',
+                                  prefixIcon: Icon(Icons.payments_rounded),
+                                ),
+                                style: const TextStyle(fontFamily: 'Outfit', fontSize: 14),
+                                validator: (val) => val == null || val.trim().isEmpty ? 'Symbol' : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 2. Business Logic Toggles
+                _buildSectionHeader('Store Policy & Features', Icons.rule_rounded),
+                const SizedBox(height: 12),
+                Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    child: Column(
+                      children: [
+                        _buildSwitchTile(
+                          title: 'Enable Customer Reviews',
+                          subtitle: 'Allow users to submit ratings and feedback on products.',
+                          value: _enableReviews,
+                          onChanged: (val) => setState(() => _enableReviews = val),
+                        ),
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                        _buildSwitchTile(
+                          title: 'Show Out-of-Stock Products',
+                          subtitle: 'Display items with 0 stock on the search and category catalog.',
+                          value: _showOutOfStock,
+                          onChanged: (val) => setState(() => _showOutOfStock = val),
+                        ),
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                        _buildSwitchTile(
+                          title: 'Require Email Verification',
+                          subtitle: 'Users must verify their email address before placing an order.',
+                          value: _requireEmailVerification,
+                          onChanged: (val) => setState(() => _requireEmailVerification = val),
+                        ),
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                        _buildSwitchTile(
+                          title: 'Enable Free Shipping Promotion',
+                          subtitle: 'Highlight free shipping options for orders qualifying at checkout.',
+                          value: _enableFreeShipping,
+                          onChanged: (val) => setState(() => _enableFreeShipping = val),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 3. API Configuration Card
+                _buildSectionHeader('API Credentials', Icons.cloud_done_rounded),
+                const SizedBox(height: 12),
+                Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         TextFormField(
                           controller: _cloudNameController,
                           decoration: const InputDecoration(
-                            labelText: 'Cloud Name',
+                            labelText: 'Cloudinary Cloud Name',
                             prefixIcon: Icon(Icons.cloud_queue_rounded),
-                            hintText: 'e.g. dlxszldqp',
                           ),
                           style: const TextStyle(fontFamily: 'Outfit', fontSize: 14),
-                          validator: (val) => val == null || val.trim().isEmpty ? 'Enter Cloudinary Cloud Name' : null,
+                          validator: (val) => val == null || val.trim().isEmpty ? 'Enter Cloud Name' : null,
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _uploadPresetController,
                           decoration: const InputDecoration(
-                            labelText: 'Unsigned Upload Preset',
+                            labelText: 'Cloudinary Unsigned Upload Preset',
                             prefixIcon: Icon(Icons.lock_open_rounded),
-                            hintText: 'e.g. babyshophub_preset',
                           ),
                           style: const TextStyle(fontFamily: 'Outfit', fontSize: 14),
-                          validator: (val) => val == null || val.trim().isEmpty ? 'Enter Unsigned Upload Preset' : null,
-                        ),
-                        const SizedBox(height: 28),
-                        ElevatedButton.icon(
-                          onPressed: _saveSettings,
-                          icon: const Icon(Icons.save_rounded, size: 20),
-                          label: const Text('Save Settings', style: TextStyle(fontFamily: 'Outfit')),
-                          style: ElevatedButton.styleFrom(
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
+                          validator: (val) => val == null || val.trim().isEmpty ? 'Enter Upload Preset' : null,
                         ),
                       ],
                     ),
                   ),
                 ),
+                const SizedBox(height: 32),
+
+                // 4. Save Button
+                ElevatedButton.icon(
+                  onPressed: _saveAllSettings,
+                  icon: const Icon(Icons.save_rounded, size: 20),
+                  label: const Text('Save All Settings', style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF9EAA),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    minimumSize: const Size.fromHeight(56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: const Color(0xFFFF9EAA)),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Outfit',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSwitchTile({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return SwitchListTile.adaptive(
+      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Outfit')),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.black38, fontFamily: 'Outfit')),
+      value: value,
+      activeColor: const Color(0xFFFF9EAA),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      onChanged: onChanged,
+    );
+  }
+}
+
+class _RevenueTrendChart extends StatelessWidget {
+  final List<double> revenueData;
+  final List<String> labels;
+
+  const _RevenueTrendChart({
+    required this.revenueData,
+    required this.labels,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 220,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9F9FB),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Revenue Analytics',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Weekly sales trend (USD)',
+                    style: TextStyle(fontSize: 11, color: Colors.black38, fontFamily: 'Outfit'),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9EAA).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '+12.4% this week',
+                  style: TextStyle(fontSize: 10, color: Color(0xFFFF9EAA), fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return CustomPaint(
+                  size: Size(constraints.maxWidth, constraints.maxHeight),
+                  painter: _ChartPainter(revenueData: revenueData, labels: labels),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChartPainter extends CustomPainter {
+  final List<double> revenueData;
+  final List<String> labels;
+
+  _ChartPainter({required this.revenueData, required this.labels});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double paddingLeft = 35.0;
+    final double paddingBottom = 20.0;
+    final double chartWidth = size.width - paddingLeft;
+    final double chartHeight = size.height - paddingBottom;
+
+    if (revenueData.isEmpty) return;
+
+    final double maxVal = revenueData.reduce((a, b) => a > b ? a : b);
+    final double range = maxVal == 0 ? 1.0 : maxVal;
+
+    // Draw horizontal grid lines and Y labels
+    final int gridLinesCount = 3;
+    final Paint gridPaint = Paint()
+      ..color = Colors.black.withOpacity(0.04)
+      ..strokeWidth = 1.0;
+
+    final TextPainter textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+    );
+
+    for (int i = 0; i <= gridLinesCount; i++) {
+      final double y = chartHeight - (i * (chartHeight / gridLinesCount));
+      canvas.drawLine(Offset(paddingLeft, y), Offset(size.width, y), gridPaint);
+
+      final double val = (i * (range / gridLinesCount));
+      textPainter.text = TextSpan(
+        text: '\$${val.toStringAsFixed(0)}',
+        style: const TextStyle(color: Colors.black38, fontSize: 9, fontFamily: 'Outfit'),
+      );
+      textPainter.layout();
+      textPainter.paint(canvas, Offset(0, y - textPainter.height / 2));
+    }
+
+    // Calculate points
+    final double stepX = chartWidth / (revenueData.length - 1);
+    final List<Offset> points = [];
+    for (int i = 0; i < revenueData.length; i++) {
+      final double x = paddingLeft + (i * stepX);
+      final double y = chartHeight - (revenueData[i] / range) * chartHeight;
+      points.add(Offset(x, y));
+    }
+
+    // Draw gradient fill below line
+    final Path fillPath = Path();
+    fillPath.moveTo(paddingLeft, chartHeight);
+    for (int i = 0; i < points.length; i++) {
+      if (i == 0) {
+        fillPath.lineTo(points[i].dx, points[i].dy);
+      } else {
+        final double prevX = points[i - 1].dx;
+        final double prevY = points[i - 1].dy;
+        final double currX = points[i].dx;
+        final double currY = points[i].dy;
+        fillPath.cubicTo(
+          prevX + stepX / 2, prevY,
+          currX - stepX / 2, currY,
+          currX, currY,
+        );
+      }
+    }
+    fillPath.lineTo(points.last.dx, chartHeight);
+    fillPath.close();
+
+    final Paint fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          const Color(0xFFFF9EAA).withOpacity(0.35),
+          const Color(0xFFFF9EAA).withOpacity(0.01),
+        ],
+      ).createShader(Rect.fromLTRB(paddingLeft, 0, size.width, chartHeight));
+    canvas.drawPath(fillPath, fillPaint);
+
+    // Draw line
+    final Path linePath = Path();
+    for (int i = 0; i < points.length; i++) {
+      if (i == 0) {
+        linePath.moveTo(points[i].dx, points[i].dy);
+      } else {
+        final double prevX = points[i - 1].dx;
+        final double prevY = points[i - 1].dy;
+        final double currX = points[i].dx;
+        final double currY = points[i].dy;
+        linePath.cubicTo(
+          prevX + stepX / 2, prevY,
+          currX - stepX / 2, currY,
+          currX, currY,
+        );
+      }
+    }
+
+    final Paint linePaint = Paint()
+      ..color = const Color(0xFFFF9EAA)
+      ..strokeWidth = 3.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(linePath, linePaint);
+
+    // Draw glowing circles and X labels
+    final Paint pointOutlinePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    final Paint pointPaint = Paint()
+      ..color = const Color(0xFFFF9EAA)
+      ..style = PaintingStyle.fill;
+
+    for (int i = 0; i < points.length; i++) {
+      canvas.drawCircle(points[i], 5.0, pointOutlinePaint);
+      canvas.drawCircle(points[i], 3.5, pointPaint);
+
+      textPainter.text = TextSpan(
+        text: labels[i],
+        style: const TextStyle(color: Colors.black38, fontSize: 9, fontFamily: 'Outfit'),
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(points[i].dx - textPainter.width / 2, chartHeight + 6),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class _CategoryDistributionChart extends StatelessWidget {
+  final Map<String, int> categoryCounts;
+
+  const _CategoryDistributionChart({required this.categoryCounts});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = categoryCounts.values.fold(0, (sum, val) => sum + val);
+
+    return Container(
+      height: 220,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9F9FB),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Category Distribution',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
+          ),
+          const SizedBox(height: 2),
+          const Text(
+            'Product counts by store category',
+            style: TextStyle(fontSize: 11, color: Colors.black38, fontFamily: 'Outfit'),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView(
+              physics: const NeverScrollableScrollPhysics(),
+              children: categoryCounts.entries.map((entry) {
+                final cat = entry.key;
+                final count = entry.value;
+                final double percent = total == 0 ? 0.0 : count / total;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 70,
+                        child: Text(
+                          cat,
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, fontFamily: 'Outfit'),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: percent,
+                            minHeight: 6,
+                            backgroundColor: Colors.black.withOpacity(0.04),
+                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF9EAA)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 20,
+                        child: Text(
+                          '$count',
+                          textAlign: TextAlign.end,
+                          style: const TextStyle(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }

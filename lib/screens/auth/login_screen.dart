@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_provider.dart';
 import '../home_screen.dart';
+import '../admin_panel.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'otp_screen.dart';
@@ -49,8 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } else {
       // Success normal login
+      final isAdmin = auth.currentUser?.role == 'admin';
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => isAdmin ? const AdminPanel() : const HomeScreen()),
       );
     }
   }
@@ -62,8 +64,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
+      final isAdmin = auth.currentUser?.role == 'admin';
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => isAdmin ? const AdminPanel() : const HomeScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -9,8 +9,8 @@ class CloudinaryService {
   static const String _presetKey = 'cloudinary_upload_preset';
 
   // Default fallback credentials
-  static const String defaultCloudName = 'dlxszldqp';
-  static const String defaultUploadPreset = 'babyshophub_preset';
+  static const String defaultCloudName = 'dbbdbdetc';
+  static const String defaultUploadPreset = 'meowmeow';
 
   String _cloudName = defaultCloudName;
   String _uploadPreset = defaultUploadPreset;

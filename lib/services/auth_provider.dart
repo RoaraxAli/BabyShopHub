@@ -54,6 +54,7 @@ class AuthProvider extends ChangeNotifier {
           final role = data?['role'] ?? (user.email?.toLowerCase().contains('admin') == true ? 'admin' : 'user');
           final displayName = data?['displayName'] ?? user.displayName ?? user.email?.split('@')[0] ?? 'Parent';
           final avatarIndex = data?['avatarIndex'] ?? 0;
+          final profilePicture = data?['profilePicture'] as String?;
           final isTotpEnabled = data?['isTotpEnabled'] ?? false;
           final totpSecret = data?['totpSecret'];
 
@@ -62,6 +63,7 @@ class AuthProvider extends ChangeNotifier {
             email: user.email ?? '',
             displayName: displayName,
             avatarIndex: avatarIndex,
+            profilePicture: profilePicture,
             isTotpEnabled: isTotpEnabled,
             totpSecret: totpSecret,
             role: role,
@@ -609,6 +611,21 @@ class AuthProvider extends ChangeNotifier {
         });
       } catch (e) {
         debugPrint('[AUTH PROVIDER ERROR] Failed to update avatar index in Firestore: $e');
+      }
+    }
+  }
+
+  Future<void> updateProfilePicture(String url) async {
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(profilePicture: url);
+      notifyListeners();
+
+      try {
+        await FirebaseFirestore.instance.collection('users').doc(_currentUser!.uid).update({
+          'profilePicture': url,
+        });
+      } catch (e) {
+        debugPrint('[AUTH PROVIDER ERROR] Failed to update profile picture in Firestore: $e');
       }
     }
   }

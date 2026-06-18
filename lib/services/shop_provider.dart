@@ -35,11 +35,45 @@ class ShopProvider extends ChangeNotifier {
   // Sync products with Firestore online if available, else fallback to local seed data
   Future<void> _loadProductsFromFirestore() async {
     try {
-      final snap = await FirebaseFirestore.instance.collection('products').get();
+      var snap = await FirebaseFirestore.instance.collection('products').get();
+      if (snap.docs.isEmpty) {
+        debugPrint('[SHOP PROVIDER] Products collection is empty. Seeding Firestore...');
+        final seeds = Product.getSeedProducts();
+        for (var p in seeds) {
+          await FirebaseFirestore.instance.collection('products').doc(p.id).set({
+            'name': p.name,
+            'category': p.category,
+            'description': p.description,
+            'price': p.price,
+            'imageUrl': p.imageUrl,
+            'imageUrls': p.imageUrls,
+            'rating': p.rating,
+            'reviewsCount': p.reviewsCount,
+            'stock': p.stock,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+          // Seed reviews
+          for (var r in p.reviews) {
+            await FirebaseFirestore.instance.collection('reviews').add({
+              'productId': p.id,
+              'user': r.user,
+              'rating': r.rating,
+              'comment': r.comment,
+              'createdAt': Timestamp.now(),
+            });
+          }
+        }
+        snap = await FirebaseFirestore.instance.collection('products').get();
+      }
+
       if (snap.docs.isNotEmpty) {
         _products.clear();
         for (var doc in snap.docs) {
           final data = doc.data();
+          final List<dynamic> urlsData = data['imageUrls'] ?? [];
+          final List<String> imageUrls = urlsData.isNotEmpty
+              ? urlsData.map((e) => e.toString()).toList()
+              : <String>[(data['imageUrl'] ?? '').toString()];
           _products.add(Product(
             id: doc.id,
             name: data['name'] ?? '',
@@ -47,6 +81,7 @@ class ShopProvider extends ChangeNotifier {
             description: data['description'] ?? '',
             price: (data['price'] ?? 0.0) as double,
             imageUrl: data['imageUrl'] ?? '',
+            imageUrls: imageUrls,
             rating: (data['rating'] ?? 5.0) as double,
             reviewsCount: (data['reviewsCount'] ?? 0) as int,
             stock: (data['stock'] ?? 0) as int,
