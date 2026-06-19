@@ -237,7 +237,7 @@ class AuthProvider extends ChangeNotifier {
 
     // Query your secure private SMTP relay hosted on Render (completely free, no cards needed)
     try {
-      final url = Uri.parse('http://localhost:3000/send-email');
+      final url = Uri.parse('https://babyshophubrender.onrender.com/send-email');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},

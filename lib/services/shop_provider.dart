@@ -581,7 +581,7 @@ class ShopProvider extends ChangeNotifier {
 
     debugPrint('[SHOP SMTP RELAY] Dispatching $type email to $email');
     try {
-      final url = Uri.parse('http://localhost:3000/send-email');
+      final url = Uri.parse('https://babyshophubrender.onrender.com/send-email');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
