@@ -8,8 +8,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const emailUser = process.env.EMAIL_USER || "hello@theali.tech";
-const emailPass = process.env.EMAIL_PASS || "jxD0czX58BsV";
+const emailUser = process.env.EMAIL_USER || "no-reply@theali.app";
+const emailPass = process.env.EMAIL_PASS || "SY2ryXaByLTX";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.zoho.com",

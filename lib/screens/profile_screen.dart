@@ -1043,7 +1043,7 @@ class _ContactUsSubScreenState extends State<ContactUsSubScreen> {
 
       // 2. Register Zoho Support SMTP ticket document
       await FirebaseFirestore.instance.collection('mail_triggers').add({
-        'to': 'hello@theali.tech',
+        'to': 'no-reply@theali.app',
         'type': 'SUPPORT_CONTACT',
         'data': {
           'name': _nameController.text.trim(),
