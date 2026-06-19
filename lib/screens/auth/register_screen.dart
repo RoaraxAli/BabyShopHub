@@ -25,27 +25,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final name = _nameController.text.trim();
     final password = _passwordController.text;
 
-    await auth.initiateRegistrationOtp(email);
+    final otpRequired = await auth.isOtpVerificationRequired();
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('OTP code sent to your email.'),
-        backgroundColor: Colors.blue,
-      ),
-    );
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => OtpScreen(
-          isMfa: false,
-          isRecovery: false,
-          email: email,
-          password: password,
-          name: name,
+    if (otpRequired) {
+      await auth.initiateRegistrationOtp(email);
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('OTP code sent to your email.'),
+          backgroundColor: Colors.blue,
         ),
-      ),
-    );
+      );
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => OtpScreen(
+            isMfa: false,
+            isRecovery: false,
+            email: email,
+            password: password,
+            name: name,
+          ),
+        ),
+      );
+    } else {
+      final success = await auth.registerDirectlyWithoutOtp(
+        email: email,
+        password: password,
+        name: name,
+      );
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration failed. Please check details or try again.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
   }
 
   @override

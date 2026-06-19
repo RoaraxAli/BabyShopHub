@@ -332,6 +332,81 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // Check if OTP verification is required on signup (synced from Firestore)
+  Future<bool> isOtpVerificationRequired() async {
+    try {
+      final snap = await FirebaseFirestore.instance.collection('admin_settings').doc('store').get();
+      if (snap.exists) {
+        return snap.data()?['requireEmailVerification'] ?? false;
+      }
+    } catch (e) {
+      debugPrint('[AUTH PROVIDER] Error loading verification settings: $e');
+    }
+    return false;
+  }
+
+  // Register user directly when OTP is disabled by admin
+  Future<bool> registerDirectlyWithoutOtp({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final UserCredential creds = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final user = creds.user;
+      if (user == null) throw Exception('Auth creation failed');
+
+      final role = email.toLowerCase().contains('admin') ? 'admin' : 'user';
+
+      _currentUser = UserProfile(
+        uid: user.uid,
+        email: email,
+        displayName: name,
+        avatarIndex: 0,
+        role: role,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_uid', user.uid);
+      await prefs.setString('auth_email', email);
+      await prefs.setString('auth_display_name', name);
+      await prefs.setInt('auth_avatar', 0);
+      await prefs.setBool('auth_totp_enabled', false);
+      await prefs.setString('auth_role', role);
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'uid': user.uid,
+        'email': email,
+        'displayName': name,
+        'avatarIndex': 0,
+        'isTotpEnabled': false,
+        'role': role,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      await _triggerZohoEmail(
+        type: 'WELCOME',
+        email: email,
+        data: {'name': name},
+      );
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Direct Registration Error: $e');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   // --- Registration / Verification (Send email OTP first) ---
   Future<void> initiateRegistrationOtp(String email) async {
     _isLoading = true;

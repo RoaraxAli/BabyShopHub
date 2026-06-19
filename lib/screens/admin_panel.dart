@@ -8,9 +8,11 @@ import '../services/shop_provider.dart';
 import '../services/auth_provider.dart';
 import '../services/cloudinary_service.dart';
 import '../models/product.dart';
+import '../models/voucher_model.dart';
 import '../models/order_model.dart';
 import 'home_screen.dart';
 import 'auth/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
 class AdminPanel extends StatefulWidget {
   const AdminPanel({super.key});
@@ -407,6 +409,8 @@ class _DashboardSectionState extends State<_DashboardSection> {
   int _totalUsers = 0;
   double _totalRevenue = 0;
   bool _loading = true;
+  List<double> _revenueTrend = [0, 0, 0, 0, 0, 0, 0];
+  List<String> _revenueLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
   @override
   void initState() {
@@ -420,14 +424,40 @@ class _DashboardSectionState extends State<_DashboardSection> {
       final usersSnap = await FirebaseFirestore.instance.collection('users').get();
       double revenue = 0;
       for (var doc in ordersSnap.docs) {
-        // Use (num).toDouble() — Firestore may store totals as int literals
         revenue += (doc.data()['total'] as num? ?? 0).toDouble();
       }
+
+      // Group revenue by last 7 days dynamically
+      final now = DateTime.now();
+      final List<double> dailyRevenue = List.filled(7, 0.0);
+      final List<String> labels = List.filled(7, '');
+      final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      final List<DateTime> days = List.generate(7, (i) {
+        final date = now.subtract(Duration(days: 6 - i));
+        labels[i] = weekdays[date.weekday - 1];
+        return DateTime(date.year, date.month, date.day);
+      });
+
+      for (var doc in ordersSnap.docs) {
+        final data = doc.data();
+        final timestamp = data['createdAt'] as Timestamp?;
+        if (timestamp != null) {
+          final orderDate = timestamp.toDate();
+          final orderDay = DateTime(orderDate.year, orderDate.month, orderDate.day);
+          final index = days.indexWhere((d) => d.isAtSameMomentAs(orderDay));
+          if (index >= 0) {
+            dailyRevenue[index] += (data['total'] as num? ?? 0).toDouble();
+          }
+        }
+      }
+
       if (mounted) {
         setState(() {
           _totalOrders = ordersSnap.docs.length;
           _totalUsers = usersSnap.docs.length;
           _totalRevenue = revenue;
+          _revenueTrend = dailyRevenue;
+          _revenueLabels = labels;
           _loading = false;
         });
       }
@@ -560,7 +590,7 @@ class _DashboardSectionState extends State<_DashboardSection> {
           
           // Analytics Charts
           if (isPhone) ...[
-            _RevenueTrendChart(revenueData: const [120, 350, 290, 580, 890, 670, 1100], labels: const ['M', 'T', 'W', 'T', 'F', 'S', 'S']),
+            _RevenueTrendChart(revenueData: _revenueTrend, labels: _revenueLabels),
             const SizedBox(height: 16),
             _CategoryDistributionChart(categoryCounts: catCounts),
           ] else ...[
@@ -569,7 +599,7 @@ class _DashboardSectionState extends State<_DashboardSection> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: _RevenueTrendChart(revenueData: const [120, 350, 290, 580, 890, 670, 1100], labels: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']),
+                  child: _RevenueTrendChart(revenueData: _revenueTrend, labels: _revenueLabels),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -703,9 +733,16 @@ class _ProductsSection extends StatelessWidget {
     final stockCtrl = TextEditingController(text: product != null ? product.stock.toString() : '');
     final descCtrl = TextEditingController(text: product?.description ?? '');
     final imgCtrl = TextEditingController(text: product?.imageUrl ?? '');
-    String selectedCategory = product?.category ?? 'Toys';
+    
+    final shop = Provider.of<ShopProvider>(context, listen: false);
+    final categories = shop.categories.map((c) => c.name).toList();
+    if (categories.isEmpty) categories.add('General');
+    if (product != null && !categories.contains(product.category)) {
+      categories.add(product.category);
+    }
+    String selectedCategory = product?.category ?? categories.first;
+    
     final formKey = GlobalKey<FormState>();
-    final categories = ['Diapers', 'Baby Food', 'Clothing', 'Toys', 'Bath'];
     final isNew = product == null;
     bool isUploading = false;
 
@@ -896,6 +933,104 @@ class _ProductsSection extends StatelessWidget {
     );
   }
 
+  void _showCategoryManager(BuildContext context) {
+    final nameCtrl = TextEditingController();
+    final imgCtrl = TextEditingController();
+    bool isUploading = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final shop = Provider.of<ShopProvider>(ctx);
+          
+          return AlertDialog(
+            title: const Text('Manage Categories', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+            content: SizedBox(
+              width: 400,
+              height: 400,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: shop.categories.length,
+                      itemBuilder: (context, i) {
+                        final cat = shop.categories[i];
+                        return ListTile(
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: cat.imageUrl.startsWith('http')
+                                ? Image.network(cat.imageUrl, width: 40, height: 40, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.image))
+                                : const Icon(Icons.image),
+                          ),
+                          title: Text(cat.name, style: const TextStyle(fontFamily: 'Outfit')),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: () => shop.deleteCategory(cat.id),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const Divider(),
+                  const Text('Add New Category', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(labelText: 'Category Name', isDense: true),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: imgCtrl,
+                          decoration: const InputDecoration(labelText: 'Image URL', isDense: true),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      isUploading ? const CircularProgressIndicator() : IconButton(
+                        icon: const Icon(Icons.upload_file),
+                        onPressed: () async {
+                          final ImagePicker picker = ImagePicker();
+                          final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                          if (image != null) {
+                            setDialogState(() => isUploading = true);
+                            final CloudinaryService cloudinary = CloudinaryService();
+                            await cloudinary.init();
+                            final String? url = await cloudinary.uploadImage(image);
+                            setDialogState(() {
+                              isUploading = false;
+                              if (url != null) imgCtrl.text = url;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (nameCtrl.text.isNotEmpty && imgCtrl.text.isNotEmpty) {
+                        shop.addCategory(nameCtrl.text.trim(), imgCtrl.text.trim());
+                        nameCtrl.clear();
+                        imgCtrl.clear();
+                      }
+                    },
+                    child: const Text('Add Category'),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close')),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -913,6 +1048,13 @@ class _ProductsSection extends StatelessWidget {
             children: [
               Text('${products.length} products in store', style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.5), fontFamily: 'Outfit')),
               const Spacer(),
+              ElevatedButton.icon(
+                onPressed: () => _showCategoryManager(context),
+                icon: const Icon(Icons.category_rounded, size: 16),
+                label: const Text('Categories', style: TextStyle(fontFamily: 'Outfit')),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFFFF9EAA), elevation: 0, side: const BorderSide(color: Color(0xFFFF9EAA))),
+              ),
+              const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () => _showProductForm(context),
                 icon: const Icon(Icons.add_rounded, size: 16),
@@ -1217,6 +1359,132 @@ class _OrdersSectionState extends State<_OrdersSection> {
     }
   }
 
+  void _showVoucherManager(BuildContext context) {
+    final codeCtrl = TextEditingController();
+    final valCtrl = TextEditingController();
+    final minCtrl = TextEditingController();
+    String selectedType = 'percentage';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final shop = Provider.of<ShopProvider>(ctx);
+          
+          return AlertDialog(
+            title: const Text('Manage Vouchers', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+            content: SizedBox(
+              width: 450,
+              height: 480,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: shop.vouchers.length,
+                      itemBuilder: (context, i) {
+                        final v = shop.vouchers[i];
+                        final discountText = v.type == 'percentage'
+                            ? '${(v.value * 100).toStringAsFixed(0)}% Off'
+                            : '\$${v.value.toStringAsFixed(2)} Off';
+                        final minText = v.minPurchase > 0
+                            ? 'Min: \$${v.minPurchase.toStringAsFixed(0)}'
+                            : 'No Min';
+                        
+                        return ListTile(
+                          leading: const CircleAvatar(
+                            backgroundColor: Color(0xFFFF9EAA),
+                            child: Icon(Icons.local_offer_rounded, color: Colors.white, size: 18),
+                          ),
+                          title: Text(v.code, style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+                          subtitle: Text('$discountText | $minText', style: const TextStyle(fontFamily: 'Outfit', fontSize: 12)),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: () => shop.deleteVoucher(v.id),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const Divider(),
+                  const Text('Create New Voucher', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: codeCtrl,
+                          decoration: const InputDecoration(labelText: 'Voucher Code (e.g. SAVE15)', isDense: true),
+                          style: const TextStyle(fontSize: 13, fontFamily: 'Outfit'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      DropdownButton<String>(
+                        value: selectedType,
+                        items: const [
+                          DropdownMenuItem(value: 'percentage', child: Text('Percentage (%)')),
+                          DropdownMenuItem(value: 'flat', child: Text('Flat Amount (\$)')),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) {
+                            setDialogState(() => selectedType = val);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: valCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: selectedType == 'percentage' ? 'Discount (e.g. 0.15 for 15%)' : 'Discount (\$)',
+                            isDense: true,
+                          ),
+                          style: const TextStyle(fontSize: 13, fontFamily: 'Outfit'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: minCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Min Purchase (\$)', isDense: true),
+                          style: const TextStyle(fontSize: 13, fontFamily: 'Outfit'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      final code = codeCtrl.text.trim();
+                      final val = double.tryParse(valCtrl.text.trim()) ?? 0.0;
+                      final min = double.tryParse(minCtrl.text.trim()) ?? 0.0;
+                      
+                      if (code.isNotEmpty && val > 0) {
+                        shop.addVoucher(code, selectedType, val, min);
+                        codeCtrl.clear();
+                        valCtrl.clear();
+                        minCtrl.clear();
+                      }
+                    },
+                    child: const Text('Add Voucher'),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close')),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Color _statusColor(String status) {
     switch (status) {
       case 'Delivered':
@@ -1260,6 +1528,14 @@ class _OrdersSectionState extends State<_OrdersSection> {
                     Text('Customer: ${order['email'] ?? 'N/A'}', style: const TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Text('Address: ${order['address'] ?? 'N/A'}'),
+                    const SizedBox(height: 8),
+                    if (order['promoCode'] != null)
+                      Text(
+                        'Voucher: ${order['promoCode']} (-\$${(order['discount'] ?? 0.0).toStringAsFixed(2)})',
+                        style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                      )
+                    else
+                      const Text('Voucher: None'),
                     const SizedBox(height: 16),
                     const Text('Change Status:', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
@@ -1416,6 +1692,18 @@ class _OrdersSectionState extends State<_OrdersSection> {
             children: [
               Text('${_orders.length} total orders', style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.5), fontFamily: 'Outfit')),
               const Spacer(),
+              ElevatedButton.icon(
+                onPressed: () => _showVoucherManager(context),
+                icon: const Icon(Icons.local_offer_rounded, size: 16),
+                label: const Text('Manage Vouchers', style: TextStyle(fontFamily: 'Outfit')),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFFF9EAA),
+                  elevation: 0,
+                  side: const BorderSide(color: Color(0xFFFF9EAA)),
+                ),
+              ),
+              const SizedBox(width: 12),
               IconButton(onPressed: _loadOrders, icon: const Icon(Icons.refresh_rounded), tooltip: 'Refresh'),
             ],
           ),
@@ -1520,9 +1808,19 @@ class _OrdersSectionState extends State<_OrdersSection> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      '${items.length} item${items.length != 1 ? 's' : ''}',
-                                      style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.5), fontFamily: 'Outfit', fontWeight: FontWeight.w500),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${items.length} item${items.length != 1 ? 's' : ''}',
+                                          style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.5), fontFamily: 'Outfit', fontWeight: FontWeight.w500),
+                                        ),
+                                        if (order['promoCode'] != null)
+                                          Text(
+                                            'Voucher: ${order['promoCode']}',
+                                            style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
+                                          ),
+                                      ],
                                     ),
                                     Text(
                                       '\$${total.toStringAsFixed(2)}',
@@ -1600,8 +1898,20 @@ class _OrdersSectionState extends State<_OrdersSection> {
                                       Expanded(flex: 2, child: Text(email, style: const TextStyle(fontSize: 12, fontFamily: 'Outfit'), overflow: TextOverflow.ellipsis)),
                                       Expanded(flex: 3, child: Text(address, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.6), fontFamily: 'Outfit'), overflow: TextOverflow.ellipsis)),
                                       Expanded(
-                                        child: Text('\$${total.toStringAsFixed(2)}',
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFFF9EAA), fontFamily: 'Outfit')),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text('\$${total.toStringAsFixed(2)}',
+                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFFF9EAA), fontFamily: 'Outfit')),
+                                            if (order['promoCode'] != null)
+                                              Text(
+                                                'Voucher: ${order['promoCode']}',
+                                                style: const TextStyle(fontSize: 9, color: Colors.green, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                          ],
+                                        ),
                                       ),
                                       Expanded(
                                         child: Text('${items.length} item${items.length != 1 ? 's' : ''}',
@@ -2612,21 +2922,42 @@ class _SettingsSectionState extends State<_SettingsSection> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    await _cloudinary.init();
+
+    String supportEmail = 'support@babyshophub.com';
+    String contactPhone = '+1 (555) 019-2834';
+    String currencySymbol = '\$';
+    bool enableReviews = true;
+    bool showOutOfStock = false;
+    bool requireEmailVerification = false;
+    bool enableFreeShipping = true;
+
+    try {
+      final snap = await FirebaseFirestore.instance.collection('admin_settings').doc('store').get();
+      if (snap.exists) {
+        final data = snap.data();
+        if (data != null) {
+          supportEmail = data['supportEmail'] ?? supportEmail;
+          contactPhone = data['contactPhone'] ?? contactPhone;
+          currencySymbol = data['currencySymbol'] ?? currencySymbol;
+          enableReviews = data['enableReviews'] ?? enableReviews;
+          showOutOfStock = data['showOutOfStock'] ?? showOutOfStock;
+          requireEmailVerification = data['requireEmailVerification'] ?? requireEmailVerification;
+          enableFreeShipping = data['enableFreeShipping'] ?? enableFreeShipping;
+        }
+      }
+    } catch (e) {
+      debugPrint('[ADMIN SETTINGS] Failed to load firestore settings: $e');
+    }
+
     if (mounted) {
       setState(() {
-        _storeNameController.text = prefs.getString('store_name') ?? 'BabyShopHub';
-        _supportEmailController.text = prefs.getString('support_email') ?? 'support@babyshophub.com';
-        _contactPhoneController.text = prefs.getString('contact_phone') ?? '+1 (555) 019-2834';
-        _currencySymbolController.text = prefs.getString('currency_symbol') ?? '\$';
-        _enableReviews = prefs.getBool('enable_reviews') ?? true;
-        _showOutOfStock = prefs.getBool('show_out_of_stock') ?? false;
-        _requireEmailVerification = prefs.getBool('require_email_verification') ?? false;
-        _enableFreeShipping = prefs.getBool('enable_free_shipping') ?? true;
-        
-        _cloudNameController.text = _cloudinary.cloudName;
-        _uploadPresetController.text = _cloudinary.uploadPreset;
-        
+        _supportEmailController.text = supportEmail;
+        _contactPhoneController.text = contactPhone;
+        _currencySymbolController.text = currencySymbol;
+        _enableReviews = enableReviews;
+        _showOutOfStock = showOutOfStock;
+        _requireEmailVerification = requireEmailVerification;
+        _enableFreeShipping = enableFreeShipping;
         _loading = false;
       });
     }
@@ -2635,21 +2966,41 @@ class _SettingsSectionState extends State<_SettingsSection> {
   Future<void> _saveAllSettings() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
+
+    final emailVal = _supportEmailController.text.trim();
+    final phoneVal = _contactPhoneController.text.trim();
+    final newName = "$emailVal ($phoneVal)";
+
+    try {
+      await FirebaseFirestore.instance.collection('admin_settings').doc('store').set({
+        'supportEmail': emailVal,
+        'contactPhone': phoneVal,
+        'currencySymbol': _currencySymbolController.text.trim(),
+        'enableReviews': _enableReviews,
+        'showOutOfStock': _showOutOfStock,
+        'requireEmailVerification': _requireEmailVerification,
+        'enableFreeShipping': _enableFreeShipping,
+      }, SetOptions(merge: true));
+
+      // Update the name everywhere for the current admin user
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+          'displayName': newName,
+        });
+      }
+    } catch (e) {
+      debugPrint('[ADMIN SETTINGS] Failed to save firestore settings: $e');
+    }
     
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('store_name', _storeNameController.text.trim());
-    await prefs.setString('support_email', _supportEmailController.text.trim());
-    await prefs.setString('contact_phone', _contactPhoneController.text.trim());
+    await prefs.setString('support_email', emailVal);
+    await prefs.setString('contact_phone', phoneVal);
     await prefs.setString('currency_symbol', _currencySymbolController.text.trim());
     await prefs.setBool('enable_reviews', _enableReviews);
     await prefs.setBool('show_out_of_stock', _showOutOfStock);
     await prefs.setBool('require_email_verification', _requireEmailVerification);
     await prefs.setBool('enable_free_shipping', _enableFreeShipping);
-    
-    await _cloudinary.updateCredentials(
-      _cloudNameController.text.trim(),
-      _uploadPresetController.text.trim(),
-    );
     
     if (mounted) {
       setState(() => _loading = false);
@@ -2709,16 +3060,6 @@ class _SettingsSectionState extends State<_SettingsSection> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        TextFormField(
-                          controller: _storeNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Store Name',
-                            prefixIcon: Icon(Icons.edit_note_rounded),
-                          ),
-                          style: const TextStyle(fontFamily: 'Outfit', fontSize: 14),
-                          validator: (val) => val == null || val.trim().isEmpty ? 'Enter Store Name' : null,
-                        ),
-                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _supportEmailController,
                           decoration: const InputDecoration(
@@ -2799,42 +3140,6 @@ class _SettingsSectionState extends State<_SettingsSection> {
                           subtitle: 'Highlight free shipping options for orders qualifying at checkout.',
                           value: _enableFreeShipping,
                           onChanged: (val) => setState(() => _enableFreeShipping = val),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // 3. API Configuration Card
-                _buildSectionHeader('API Credentials', Icons.cloud_done_rounded),
-                const SizedBox(height: 12),
-                Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextFormField(
-                          controller: _cloudNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Cloudinary Cloud Name',
-                            prefixIcon: Icon(Icons.cloud_queue_rounded),
-                          ),
-                          style: const TextStyle(fontFamily: 'Outfit', fontSize: 14),
-                          validator: (val) => val == null || val.trim().isEmpty ? 'Enter Cloud Name' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _uploadPresetController,
-                          decoration: const InputDecoration(
-                            labelText: 'Cloudinary Unsigned Upload Preset',
-                            prefixIcon: Icon(Icons.lock_open_rounded),
-                          ),
-                          style: const TextStyle(fontFamily: 'Outfit', fontSize: 14),
-                          validator: (val) => val == null || val.trim().isEmpty ? 'Enter Upload Preset' : null,
                         ),
                       ],
                     ),

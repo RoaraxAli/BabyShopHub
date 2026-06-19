@@ -77,6 +77,8 @@ class OrderModel {
   final double total;
   final List<OrderStatusHistory> statusHistory;
   final DateTime createdAt;
+  final String? promoCode;
+  final double discount;
 
   OrderModel({
     required this.id,
@@ -87,6 +89,8 @@ class OrderModel {
     required this.total,
     required this.statusHistory,
     required this.createdAt,
+    this.promoCode,
+    this.discount = 0.0,
   });
 
   String get currentStatus {
@@ -114,6 +118,8 @@ class OrderModel {
       'total': total,
       'statusHistory': statusHistory.map((x) => x.toMap()).toList(),
       'createdAt': Timestamp.fromDate(createdAt),
+      'promoCode': promoCode,
+      'discount': discount,
     };
   }
 
@@ -151,6 +157,8 @@ class OrderModel {
       total: (map['total'] as num? ?? 0.0).toDouble(),
       statusHistory: history,
       createdAt: created,
+      promoCode: map['promoCode'] as String?,
+      discount: (map['discount'] as num? ?? 0.0).toDouble(),
     );
   }
 }

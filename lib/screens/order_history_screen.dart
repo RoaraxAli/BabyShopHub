@@ -348,6 +348,19 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
               const Divider(height: 16),
 
+              if (order.promoCode != null && order.discount > 0) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Voucher: ${order.promoCode} (-\$${order.discount.toStringAsFixed(2)})',
+                      style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+              ],
+
               // Footer
               Row(
                 children: [

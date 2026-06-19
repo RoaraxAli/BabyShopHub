@@ -1103,6 +1103,7 @@ class _ContactUsSubScreenState extends State<ContactUsSubScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
+                readOnly: true,
                 validator: (val) => val == null || val.trim().isEmpty ? 'Enter your name' : null,
                 decoration: const InputDecoration(
                   labelText: 'Name',
@@ -1112,6 +1113,7 @@ class _ContactUsSubScreenState extends State<ContactUsSubScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
+                readOnly: true,
                 keyboardType: TextInputType.emailAddress,
                 validator: (val) {
                   if (val == null || val.isEmpty) return 'Enter email address';

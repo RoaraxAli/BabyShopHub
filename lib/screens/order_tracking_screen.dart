@@ -259,6 +259,22 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       ),
                     )),
                     const Divider(height: 20),
+                    if (order.promoCode != null && order.discount > 0) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Promo Code (${order.promoCode})',
+                            style: const TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w600),
+                          ),
+                          Text(
+                            '-\$${order.discount.toStringAsFixed(2)}',
+                            style: const TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [

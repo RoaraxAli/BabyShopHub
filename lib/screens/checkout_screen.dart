@@ -103,43 +103,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
 
     final userEmail = auth.currentUser?.email ?? 'guest.parent@gmail.com';
+    // Bypassing Stripe to directly process the checkout locally in Firestore
     final errorMsg = await shop.processCheckout(userEmail, _addressController.text.trim());
 
     if (!mounted) return;
 
     if (errorMsg == null) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Order Placed Successfully', textAlign: TextAlign.center),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.check_circle_outline_rounded,
-                size: 64,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Thank you for shopping at BabyShopHub! An itemized receipt has been sent to your email address.',
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          actions: [
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Dismiss Dialog
-                  Navigator.of(context).pop(); // Pop back to Home
-                },
-                child: const Text('Return to Shop'),
-              ),
-            ),
-          ],
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Order placed successfully!'),
+          backgroundColor: Colors.green,
         ),
       );
     } else {
@@ -205,100 +179,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  const Text(
-                    'Payment Details (Simulated)',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _cardNameController,
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) return 'Enter name on card';
-                      if (val.trim().length < 3) return 'Name is too short';
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Cardholder Name',
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _cardNumberController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(16),
-                    ],
-                    validator: (val) {
-                      if (val == null || val.isEmpty) return 'Enter card number';
-                      final reg = RegExp(r'^\d{16}$');
-                      if (!reg.hasMatch(val)) return 'Card number must be exactly 16 digits';
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Card Number',
-                      prefixIcon: Icon(Icons.credit_card_outlined),
-                      hintText: '4000123456789010',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _cardExpiryController,
-                          keyboardType: TextInputType.datetime,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'[0-9/]')),
-                            LengthLimitingTextInputFormatter(5),
-                          ],
-                          validator: (val) {
-                            if (val == null || val.isEmpty) return 'Enter expiry';
-                            final reg = RegExp(r'^(0[1-9]|1[0-2])\/([0-9]{2})$');
-                            if (!reg.hasMatch(val)) return 'Use MM/YY format';
-                            
-                            final parts = val.split('/');
-                            final month = int.parse(parts[0]);
-                            final year = int.parse('20' + parts[1]);
-                            final now = DateTime.now();
-                            if (year < now.year || (year == now.year && month < now.month)) {
-                              return 'Expired';
-                            }
-                            return null;
-                          },
-                          decoration: const InputDecoration(
-                            labelText: 'Expiry Date',
-                            hintText: 'MM/YY',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _cardCvvController,
-                          obscureText: true,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(4),
-                          ],
-                          validator: (val) {
-                            if (val == null || val.isEmpty) return 'Enter CVV';
-                            final reg = RegExp(r'^\d{3,4}$');
-                            if (!reg.hasMatch(val)) return 'Must be 3-4 digits';
-                            return null;
-                          },
-                          decoration: const InputDecoration(
-                            labelText: 'CVV',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
 
                   // Promo Code Application Row
                   const Text(
@@ -472,7 +352,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                   ElevatedButton(
                     onPressed: _handlePayment,
-                    child: const Text('Authorize Payment'),
+                    child: const Text('Complete Order'),
                   ),
                 ],
               ),

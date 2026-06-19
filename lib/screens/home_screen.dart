@@ -21,14 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _bottomNavIndex = 0;
   final TextEditingController _searchController = TextEditingController();
 
-  final List<String> _categories = [
-    'All',
-    'Diapers',
-    'Baby Food',
-    'Clothing',
-    'Toys',
-    'Bath',
-  ];
+  // Categories are loaded dynamically from ShopProvider
 
   @override
   Widget build(BuildContext context) {
@@ -224,13 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
         : 'Good evening';
     final firstName = (user?.displayName ?? 'there').split(' ').first;
     final newArrivals = shop.products.take(8).toList();
-    final featuredCategories = [
-      {'icon': '🍼', 'label': 'Baby Food', 'color': const Color(0xFFFFF3E0)},
-      {'icon': '👶', 'label': 'Diapers', 'color': const Color(0xFFE8F5E9)},
-      {'icon': '👕', 'label': 'Clothing', 'color': const Color(0xFFE3F2FD)},
-      {'icon': '🧸', 'label': 'Toys', 'color': const Color(0xFFFCE4EC)},
-      {'icon': '🛁', 'label': 'Bath', 'color': const Color(0xFFF3E5F5)},
-    ];
+    final categories = shop.categories;
 
     return SafeArea(
       child: CustomScrollView(
@@ -296,15 +283,24 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        Text(
-                          '$firstName 👋',
-                          style: const TextStyle(
-                            fontSize: 34,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.black87,
-                            fontFamily: 'Outfit',
-                            letterSpacing: -1,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              '$firstName ',
+                              style: const TextStyle(
+                                fontSize: 34,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.black87,
+                                fontFamily: 'Outfit',
+                                letterSpacing: -1,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.waving_hand_rounded,
+                              color: Color(0xFFFFB347),
+                              size: 30,
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -438,19 +434,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: Colors.white.withOpacity(0.28),
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              child: const Text(
-                                '🎁  Limited Offer',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Outfit',
-                                ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 14),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Limited Offer',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Outfit',
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: 10),
                             const Text(
-                              'Free Shipping\non Orders Over \$50',
+                              'Free Shipping\non All Orders',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 25,
@@ -543,15 +546,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 160,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: featuredCategories.length,
+                      itemCount: categories.length,
                       itemBuilder: (context, i) {
-                        final cat = featuredCategories[i];
+                        final cat = categories[i];
                         return GestureDetector(
                           onTap: () {
                             Provider.of<ShopProvider>(
                               context,
                               listen: false,
-                            ).setCategory(cat['label'] as String);
+                            ).setCategory(cat.name);
                             setState(() => _bottomNavIndex = 1);
                           },
                           child: Container(
@@ -563,27 +566,31 @@ class _HomeScreenState extends State<HomeScreen> {
                                   width: 90,
                                   height: 90,
                                   decoration: BoxDecoration(
-                                    color: cat['color'] as Color,
+                                    color: const Color(0xFFF9F9FB),
                                     borderRadius: BorderRadius.circular(26),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: (cat['color'] as Color)
-                                            .withOpacity(0.5),
+                                        color: Colors.black.withOpacity(0.04),
                                         blurRadius: 12,
                                         offset: const Offset(0, 4),
                                       ),
                                     ],
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      cat['icon'] as String,
-                                      style: const TextStyle(fontSize: 38),
-                                    ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(26),
+                                    child: cat.imageUrl.startsWith('http')
+                                        ? Image.network(
+                                            cat.imageUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                const Icon(Icons.category_rounded, color: Color(0xFFFF9EAA)),
+                                          )
+                                        : const Icon(Icons.category_rounded, color: Color(0xFFFF9EAA)),
                                   ),
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
-                                  cat['label'] as String,
+                                  cat.name,
                                   style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
@@ -615,15 +622,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Row(
                     children: [
-                      const Text(
-                        'New Arrivals ✨',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          fontFamily: 'Outfit',
-                          color: Colors.black87,
+                        Row(
+                          children: [
+                            const Text(
+                              'New Arrivals ',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'Outfit',
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const Icon(Icons.auto_awesome_rounded, color: Color(0xFFFFB347), size: 20),
+                          ],
                         ),
-                      ),
                       const Spacer(),
                       GestureDetector(
                         onTap: () => setState(() => _bottomNavIndex = 1),
@@ -1045,6 +1057,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ─── SHOP / EXPLORE FEED TAB ──────────────────────────────────────────────
   Widget _buildShopFeed(ThemeData theme, ShopProvider shop, AuthProvider auth) {
     final user = auth.currentUser;
+    final feedCategories = ['All', ...shop.categories.map((c) => c.name)];
 
     return SafeArea(
       child: CustomScrollView(
@@ -1221,10 +1234,10 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 44,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: _categories.length,
+                itemCount: feedCategories.length,
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 itemBuilder: (context, index) {
-                  final cat = _categories[index];
+                  final cat = feedCategories[index];
                   final isSelected = shop.selectedCategory == cat;
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4.0),

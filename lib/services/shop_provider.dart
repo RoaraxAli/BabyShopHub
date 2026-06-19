@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product.dart';
 import '../models/cart.dart';
+import '../models/category_model.dart';
+import '../models/voucher_model.dart';
 
 class ShopProvider extends ChangeNotifier {
   final List<Product> _products = Product.getSeedProducts();
@@ -15,12 +19,17 @@ class ShopProvider extends ChangeNotifier {
   String? _appliedPromoCode;
   double _promoDiscount = 0.0;
 
+  final List<CategoryModel> _categories = [];
+  final List<VoucherModel> _vouchers = [];
+
   List<Product> get products => _products;
   List<CartItem> get cart => _cart;
   List<String> get wishlist => _wishlist;
   bool get isLoading => _isLoading;
   String? get appliedPromoCode => _appliedPromoCode;
   double get promoDiscount => _promoDiscount;
+  List<CategoryModel> get categories => _categories;
+  List<VoucherModel> get vouchers => _vouchers;
 
   String _searchQuery = '';
   String _selectedCategory = 'All';
@@ -30,6 +39,8 @@ class ShopProvider extends ChangeNotifier {
 
   ShopProvider() {
     _loadProductsFromFirestore();
+    _loadCategoriesFromFirestore();
+    _loadVouchersFromFirestore();
   }
 
   // Sync products with Firestore online if available, else fallback to local seed data
@@ -95,6 +106,245 @@ class ShopProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> _loadCategoriesFromFirestore() async {
+    try {
+      var snap = await FirebaseFirestore.instance.collection('categories').get();
+      if (snap.docs.isEmpty) {
+        debugPrint('[SHOP PROVIDER] Categories collection is empty. Seeding Firestore...');
+        final seeds = [
+          CategoryModel(id: 'c1', name: 'Diapers', imageUrl: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?auto=format&fit=crop&q=80&w=400'),
+          CategoryModel(id: 'c2', name: 'Baby Food', imageUrl: 'https://images.unsplash.com/photo-1596701062351-8c2c14d1fdd0?auto=format&fit=crop&q=80&w=400'),
+          CategoryModel(id: 'c3', name: 'Clothing', imageUrl: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=400'),
+          CategoryModel(id: 'c4', name: 'Toys', imageUrl: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?auto=format&fit=crop&q=80&w=400'),
+          CategoryModel(id: 'c5', name: 'Bath', imageUrl: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=400'),
+        ];
+        for (var c in seeds) {
+          await FirebaseFirestore.instance.collection('categories').doc(c.id).set(c.toMap());
+        }
+        snap = await FirebaseFirestore.instance.collection('categories').get();
+      }
+
+      if (snap.docs.isNotEmpty) {
+        _categories.clear();
+        for (var doc in snap.docs) {
+          _categories.add(CategoryModel.fromMap(doc.data(), doc.id));
+        }
+        _saveCategoriesToPrefs();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[SHOP PROVIDER ERROR] _loadCategoriesFromFirestore failed: $e');
+      await _loadCategoriesFromPrefs();
+    }
+  }
+
+  Future<void> _saveCategoriesToPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = _categories.map((c) => jsonEncode({
+        'id': c.id,
+        'name': c.name,
+        'imageUrl': c.imageUrl,
+      })).toList();
+      await prefs.setStringList('local_categories', list);
+    } catch (err) {
+      debugPrint('[SHOP PROVIDER ERROR] _saveCategoriesToPrefs failed: $err');
+    }
+  }
+
+  Future<void> _loadCategoriesFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList('local_categories');
+      if (list != null && list.isNotEmpty) {
+        _categories.clear();
+        for (var item in list) {
+          final data = jsonDecode(item);
+          _categories.add(CategoryModel(
+            id: data['id'] ?? '',
+            name: data['name'] ?? '',
+            imageUrl: data['imageUrl'] ?? '',
+          ));
+        }
+        notifyListeners();
+      } else {
+        _loadDefaultSeedCategories();
+      }
+    } catch (_) {
+      _loadDefaultSeedCategories();
+    }
+  }
+
+  void _loadDefaultSeedCategories() {
+    _categories.clear();
+    _categories.addAll([
+      CategoryModel(id: 'c1', name: 'Diapers', imageUrl: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?auto=format&fit=crop&q=80&w=400'),
+      CategoryModel(id: 'c2', name: 'Baby Food', imageUrl: 'https://images.unsplash.com/photo-1596701062351-8c2c14d1fdd0?auto=format&fit=crop&q=80&w=400'),
+      CategoryModel(id: 'c3', name: 'Clothing', imageUrl: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=400'),
+      CategoryModel(id: 'c4', name: 'Toys', imageUrl: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?auto=format&fit=crop&q=80&w=400'),
+      CategoryModel(id: 'c5', name: 'Bath', imageUrl: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=400'),
+    ]);
+    notifyListeners();
+  }
+
+  Future<void> addCategory(String name, String imageUrl) async {
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final newCat = CategoryModel(id: tempId, name: name, imageUrl: imageUrl);
+    _categories.add(newCat);
+    _saveCategoriesToPrefs();
+    notifyListeners();
+
+    try {
+      final docRef = await FirebaseFirestore.instance.collection('categories').add({
+        'name': name,
+        'imageUrl': imageUrl,
+      });
+      final idx = _categories.indexWhere((c) => c.id == tempId);
+      if (idx >= 0) {
+        _categories[idx] = CategoryModel(id: docRef.id, name: name, imageUrl: imageUrl);
+        _saveCategoriesToPrefs();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[SHOP PROVIDER ERROR] Failed to persist category to Firestore: $e');
+    }
+  }
+
+  Future<void> deleteCategory(String id) async {
+    _categories.removeWhere((c) => c.id == id);
+    _saveCategoriesToPrefs();
+    notifyListeners();
+
+    try {
+      if (!id.startsWith('temp_')) {
+        await FirebaseFirestore.instance.collection('categories').doc(id).delete();
+      }
+    } catch (e) {
+      debugPrint('[SHOP PROVIDER ERROR] Failed to delete category from Firestore: $e');
+    }
+  }
+
+  Future<void> _loadVouchersFromFirestore() async {
+    try {
+      var snap = await FirebaseFirestore.instance.collection('vouchers').get();
+      if (snap.docs.isEmpty) {
+        debugPrint('[SHOP PROVIDER] Vouchers collection is empty. Seeding Firestore...');
+        final seeds = [
+          VoucherModel(id: 'v1', code: 'FIRSTBABY', type: 'percentage', value: 0.15, minPurchase: 0.0),
+          VoucherModel(id: 'v2', code: 'BABYSAVE10', type: 'flat', value: 10.0, minPurchase: 30.0),
+          VoucherModel(id: 'v3', code: 'NEWPARENT', type: 'percentage', value: 0.20, minPurchase: 0.0),
+        ];
+        for (var v in seeds) {
+          await FirebaseFirestore.instance.collection('vouchers').doc(v.id).set(v.toMap());
+        }
+        snap = await FirebaseFirestore.instance.collection('vouchers').get();
+      }
+
+      if (snap.docs.isNotEmpty) {
+        _vouchers.clear();
+        for (var doc in snap.docs) {
+          _vouchers.add(VoucherModel.fromMap(doc.data(), doc.id));
+        }
+        _saveVouchersToPrefs();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[SHOP PROVIDER ERROR] _loadVouchersFromFirestore failed: $e');
+      await _loadVouchersFromPrefs();
+    }
+  }
+
+  Future<void> _saveVouchersToPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = _vouchers.map((v) => jsonEncode({
+        'id': v.id,
+        'code': v.code,
+        'type': v.type,
+        'value': v.value,
+        'minPurchase': v.minPurchase,
+      })).toList();
+      await prefs.setStringList('local_vouchers', list);
+    } catch (err) {
+      debugPrint('[SHOP PROVIDER ERROR] _saveVouchersToPrefs failed: $err');
+    }
+  }
+
+  Future<void> _loadVouchersFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList('local_vouchers');
+      if (list != null && list.isNotEmpty) {
+        _vouchers.clear();
+        for (var item in list) {
+          final data = jsonDecode(item);
+          _vouchers.add(VoucherModel(
+            id: data['id'] ?? '',
+            code: data['code'] ?? '',
+            type: data['type'] ?? 'percentage',
+            value: (data['value'] as num? ?? 0.0).toDouble(),
+            minPurchase: (data['minPurchase'] as num? ?? 0.0).toDouble(),
+          ));
+        }
+        notifyListeners();
+      } else {
+        _loadDefaultSeedVouchers();
+      }
+    } catch (_) {
+      _loadDefaultSeedVouchers();
+    }
+  }
+
+  void _loadDefaultSeedVouchers() {
+    _vouchers.clear();
+    _vouchers.addAll([
+      VoucherModel(id: 'v1', code: 'FIRSTBABY', type: 'percentage', value: 0.15, minPurchase: 0.0),
+      VoucherModel(id: 'v2', code: 'BABYSAVE10', type: 'flat', value: 10.0, minPurchase: 30.0),
+      VoucherModel(id: 'v3', code: 'NEWPARENT', type: 'percentage', value: 0.20, minPurchase: 0.0),
+    ]);
+    notifyListeners();
+  }
+
+  Future<void> addVoucher(String code, String type, double value, double minPurchase) async {
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final cleanCode = code.trim().toUpperCase();
+    final newVoucher = VoucherModel(id: tempId, code: cleanCode, type: type, value: value, minPurchase: minPurchase);
+    _vouchers.add(newVoucher);
+    _saveVouchersToPrefs();
+    notifyListeners();
+
+    try {
+      final docRef = await FirebaseFirestore.instance.collection('vouchers').add({
+        'code': cleanCode,
+        'type': type,
+        'value': value,
+        'minPurchase': minPurchase,
+      });
+      final idx = _vouchers.indexWhere((v) => v.id == tempId);
+      if (idx >= 0) {
+        _vouchers[idx] = VoucherModel(id: docRef.id, code: cleanCode, type: type, value: value, minPurchase: minPurchase);
+        _saveVouchersToPrefs();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[SHOP PROVIDER ERROR] Failed to persist voucher to Firestore: $e');
+    }
+  }
+
+  Future<void> deleteVoucher(String id) async {
+    _vouchers.removeWhere((v) => v.id == id);
+    _saveVouchersToPrefs();
+    notifyListeners();
+
+    try {
+      if (!id.startsWith('temp_')) {
+        await FirebaseFirestore.instance.collection('vouchers').doc(id).delete();
+      }
+    } catch (e) {
+      debugPrint('[SHOP PROVIDER ERROR] Failed to delete voucher from Firestore: $e');
+    }
+  }
+
   /// Called by admin panel after product add/edit/delete
   Future<void> refreshProducts() => _loadProductsFromFirestore();
 
@@ -129,18 +379,21 @@ class ShopProvider extends ChangeNotifier {
     }
     final code = _appliedPromoCode!.toUpperCase();
     final sub = cartSubtotal;
-    if (code == 'FIRSTBABY') {
-      _promoDiscount = sub * 0.15;
-    } else if (code == 'BABYSAVE10') {
-      if (sub >= 30.0) {
-        _promoDiscount = 10.0;
+    final index = _vouchers.indexWhere((v) => v.code.toUpperCase() == code);
+    if (index >= 0) {
+      final v = _vouchers[index];
+      if (sub >= v.minPurchase) {
+        if (v.type == 'percentage') {
+          _promoDiscount = sub * v.value;
+        } else {
+          _promoDiscount = v.value;
+        }
       } else {
         _appliedPromoCode = null;
         _promoDiscount = 0.0;
       }
-    } else if (code == 'NEWPARENT') {
-      _promoDiscount = sub * 0.20;
     } else {
+      _appliedPromoCode = null;
       _promoDiscount = 0.0;
     }
   }
@@ -153,20 +406,12 @@ class ShopProvider extends ChangeNotifier {
       return 'Cart is empty';
     }
 
-    if (cleanCode == 'FIRSTBABY') {
-      _appliedPromoCode = cleanCode;
-      _recalculateDiscount();
-      notifyListeners();
-      return null;
-    } else if (cleanCode == 'BABYSAVE10') {
-      if (sub < 30.0) {
-        return 'Minimum purchase of \$30.00 required for this code';
+    final index = _vouchers.indexWhere((v) => v.code.toUpperCase() == cleanCode);
+    if (index >= 0) {
+      final v = _vouchers[index];
+      if (sub < v.minPurchase) {
+        return 'Minimum purchase of \$${v.minPurchase.toStringAsFixed(2)} required for this code';
       }
-      _appliedPromoCode = cleanCode;
-      _recalculateDiscount();
-      notifyListeners();
-      return null;
-    } else if (cleanCode == 'NEWPARENT') {
       _appliedPromoCode = cleanCode;
       _recalculateDiscount();
       notifyListeners();
@@ -477,6 +722,90 @@ class ShopProvider extends ChangeNotifier {
           }
         }
       }
+    }
+  }
+
+  // --- Stripe Checkout Redirect Flow ---
+  Future<String?> initiateStripeCheckout(String userEmail, String shippingAddress) async {
+    _isLoading = true;
+    notifyListeners();
+
+    final user = FirebaseAuth.instance.currentUser;
+    final userId = user?.uid ?? '';
+
+    final itemsList = _cart.map((item) => {
+      'id': item.product.id,
+      'name': item.product.name,
+      'quantity': item.quantity,
+      'price': item.product.price,
+      'total': item.totalPrice,
+      'imageUrl': item.product.imageUrl,
+    }).toList();
+
+    final orderTotal = cartTotal;
+    final promoCode = _appliedPromoCode;
+    final discountVal = _promoDiscount;
+
+    try {
+      // 1. Create order in Firestore as Pending
+      final orderRef = await FirebaseFirestore.instance.collection('orders').add({
+        'email': userEmail,
+        'userId': userId,
+        'address': shippingAddress,
+        'items': itemsList,
+        'total': orderTotal,
+        'promoCode': promoCode,
+        'discount': discountVal,
+        'status': 'Pending',
+        'statusHistory': [
+          {
+            'status': 'Pending',
+            'timestamp': Timestamp.now(),
+            'note': 'Stripe checkout initiated',
+          }
+        ],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // 2. Call Next.js API route to create Checkout Session
+      final response = await http.post(
+        Uri.parse('http://localhost:3000/api/checkout'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'items': _cart.map((item) => {
+            'product': {
+              'name': item.product.name,
+              'price': item.product.price,
+              'image': item.product.imageUrl ?? '',
+            },
+            'quantity': item.quantity,
+          }).toList(),
+          'userId': userId,
+          'email': userEmail,
+          'address': shippingAddress,
+          'orderId': orderRef.id,
+          'redirectUrl': 'http://localhost:3000',
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final resBody = jsonDecode(response.body);
+        final stripeUrl = resBody['url'] as String?;
+        if (stripeUrl != null) {
+          clearCart();
+          _isLoading = false;
+          notifyListeners();
+          
+          await launchUrl(Uri.parse(stripeUrl), mode: LaunchMode.externalApplication);
+          return null; // success
+        }
+      }
+      throw Exception('Failed to generate Stripe Checkout: ${response.body}');
+    } catch (e) {
+      debugPrint('[STRIPE CHECKOUT ERROR] $e');
+      _isLoading = false;
+      notifyListeners();
+      return e.toString();
     }
   }
 }

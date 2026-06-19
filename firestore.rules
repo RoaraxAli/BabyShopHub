@@ -30,6 +30,18 @@ service cloud.firestore {
       allow write: if isAuthenticated(); // Simulating administrative edits
     }
 
+    // Categories are readable by anyone, admin can modify
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Vouchers are readable by anyone, admin can modify
+    match /vouchers/{voucherId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
     // Wishlist alerts collection
     match /wishlists/{wishlistId} {
       allow read, write: if isAuthenticated();
@@ -50,6 +62,18 @@ service cloud.firestore {
     // Support tickets rules
     match /support_tickets/{ticketId} {
       allow read, write: if isAuthenticated();
+    }
+
+    // Mail triggers rules for Zoho SMTP dispatching
+    match /mail_triggers/{triggerId} {
+      allow create: if isAuthenticated();
+      allow read, write: if isAuthenticated();
+    }
+
+    // Admin settings rules
+    match /admin_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
   }
 }
