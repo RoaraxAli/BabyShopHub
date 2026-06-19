@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
@@ -8,8 +9,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const emailUser = process.env.EMAIL_USER || "no-reply@theali.app";
-const emailPass = process.env.EMAIL_PASS || "SY2ryXaByLTX";
+const emailUser = process.env.EMAIL_USER;
+const emailPass = process.env.EMAIL_PASS;
 
 const transporter = nodemailer.createTransport({
   host: "smtp.zoho.com",
