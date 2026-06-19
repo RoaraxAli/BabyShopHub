@@ -49,4 +49,26 @@ app.post("/send-email", async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`SMTP Relay Server is active on port ${PORT}`);
+  
+  // Diagnostic network check to see which ports/servers are reachable from Render
+  const net = require("net");
+  const testConn = (host, port) => {
+    const socket = net.createConnection(port, host, () => {
+      console.log(`[DIAGNOSTIC] Connection to ${host}:${port} - SUCCESSFUL`);
+      socket.destroy();
+    });
+    socket.on("error", (err) => {
+      console.log(`[DIAGNOSTIC] Connection to ${host}:${port} - FAILED: ${err.message}`);
+    });
+    socket.setTimeout(6000);
+    socket.on("timeout", () => {
+      console.log(`[DIAGNOSTIC] Connection to ${host}:${port} - TIMEOUT`);
+      socket.destroy();
+    });
+  };
+
+  testConn("smtp.zoho.com", 465);
+  testConn("smtp.zoho.com", 587);
+  testConn("smtp.zoho.eu", 465);
+  testConn("smtp.zoho.eu", 587);
 });
