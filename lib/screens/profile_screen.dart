@@ -66,7 +66,7 @@ class ProfileScreen extends StatelessWidget {
               icon: const Icon(Icons.admin_panel_settings_rounded),
               label: const Text('Return to Admin Panel'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF9EAA),
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

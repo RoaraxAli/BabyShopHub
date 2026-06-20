@@ -65,7 +65,7 @@ class _AdminPanelState extends State<AdminPanel> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFFFF9EAA).withOpacity(0.12) : Colors.transparent,
+                  color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.12) : Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -74,7 +74,7 @@ class _AdminPanelState extends State<AdminPanel> {
                     Icon(
                       item.icon,
                       size: 20,
-                      color: isSelected ? const Color(0xFFFF9EAA) : Colors.black38,
+                      color: isSelected ? Theme.of(context).colorScheme.primary : Colors.black38,
                     ),
                     if (isSelected) ...[
                       const SizedBox(width: 6),
@@ -83,7 +83,7 @@ class _AdminPanelState extends State<AdminPanel> {
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFFF9EAA),
+                          color: Theme.of(context).colorScheme.primary,
                           fontFamily: 'Outfit',
                         ),
                       ),
@@ -150,7 +150,7 @@ class _AdminPanelState extends State<AdminPanel> {
                       const Spacer(),
                       if (isMobile) ...[
                         IconButton(
-                          icon: const Icon(Icons.storefront_rounded, size: 20, color: Color(0xFFFF9EAA)),
+                          icon: Icon(Icons.storefront_rounded, size: 20, color: Theme.of(context).colorScheme.primary),
                           onPressed: () {
                             Navigator.of(context).pushReplacement(
                               MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -175,15 +175,15 @@ class _AdminPanelState extends State<AdminPanel> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFF9EAA).withOpacity(0.12),
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.shield_rounded, size: 14, color: Color(0xFFFF9EAA)),
+                              Icon(Icons.shield_rounded, size: 14, color: Theme.of(context).colorScheme.primary),
                               SizedBox(width: 4),
-                              Text('Admin', style: TextStyle(fontSize: 11, color: Color(0xFFFF9EAA), fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+                              Text('Admin', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
                             ],
                           ),
                         ),
@@ -224,7 +224,7 @@ class _AdminPanelState extends State<AdminPanel> {
                   height: 36,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFFFF9EAA), Color(0xFFFFB347)],
+                      colors: [Theme.of(context).colorScheme.primary, Color(0xFFFFB347)],
                     ),
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -272,7 +272,7 @@ class _AdminPanelState extends State<AdminPanel> {
                 children: [
                   const CircleAvatar(
                     radius: 16,
-                    backgroundColor: Color(0xFFFF9EAA),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     child: Icon(Icons.admin_panel_settings_rounded, size: 16, color: Colors.white),
                   ),
                   const SizedBox(width: 10),
@@ -309,10 +309,10 @@ class _AdminPanelState extends State<AdminPanel> {
                     MaterialPageRoute(builder: (context) => const HomeScreen()),
                   );
                 },
-                icon: const Icon(Icons.storefront_rounded, size: 14, color: Color(0xFFFF9EAA)),
-                label: const Text('View as User', style: TextStyle(fontSize: 11, color: Color(0xFFFF9EAA), fontFamily: 'Outfit')),
+                icon: Icon(Icons.storefront_rounded, size: 14, color: Theme.of(context).colorScheme.primary),
+                label: Text('View as User', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary, fontFamily: 'Outfit')),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFFF9EAA), width: 1),
+                  side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -359,7 +359,7 @@ class _AdminPanelState extends State<AdminPanel> {
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFF9EAA).withOpacity(0.12) : Colors.transparent,
+          color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -367,7 +367,7 @@ class _AdminPanelState extends State<AdminPanel> {
             Icon(
               item.icon,
               size: 18,
-              color: isSelected ? const Color(0xFFFF9EAA) : Colors.black45,
+              color: isSelected ? Theme.of(context).colorScheme.primary : Colors.black45,
             ),
             const SizedBox(width: 12),
             Text(
@@ -375,13 +375,13 @@ class _AdminPanelState extends State<AdminPanel> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? const Color(0xFFFF9EAA) : Colors.black54,
+                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.black54,
                 fontFamily: 'Outfit',
               ),
             ),
             if (isSelected) ...[
               const Spacer(),
-              Container(width: 4, height: 4, decoration: const BoxDecoration(color: Color(0xFFFF9EAA), shape: BoxShape.circle)),
+              Container(width: 4, height: 4, decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle)),
             ],
           ],
         ),
@@ -481,7 +481,7 @@ class _DashboardSectionState extends State<_DashboardSection> {
           children: [
             const Text('Stock Alerts', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
             const SizedBox(height: 4),
-            Text('$outOfStock products are out of stock', style: TextStyle(color: outOfStock > 0 ? const Color(0xFFFF9EAA) : Colors.black54, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Outfit')),
+            Text('$outOfStock products are out of stock', style: TextStyle(color: outOfStock > 0 ? Theme.of(context).colorScheme.primary : Colors.black54, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Outfit')),
             const SizedBox(height: 16),
             ...products.where((p) => p.stock <= 5).map((p) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
@@ -490,13 +490,13 @@ class _DashboardSectionState extends State<_DashboardSection> {
                   Container(
                     width: 8, height: 8,
                     decoration: BoxDecoration(
-                      color: p.stock == 0 ? const Color(0xFFFF9EAA) : Colors.black26,
+                      color: p.stock == 0 ? Theme.of(context).colorScheme.primary : Colors.black26,
                       shape: BoxShape.circle,
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(child: Text(p.name, style: const TextStyle(fontSize: 12, fontFamily: 'Outfit'), overflow: TextOverflow.ellipsis)),
-                  Text('${p.stock} left', style: TextStyle(fontSize: 11, color: p.stock == 0 ? const Color(0xFFFF9EAA) : Colors.black45, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+                  Text('${p.stock} left', style: TextStyle(fontSize: 11, color: p.stock == 0 ? Theme.of(context).colorScheme.primary : Colors.black45, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
                 ],
               ),
             )),
@@ -519,21 +519,21 @@ class _DashboardSectionState extends State<_DashboardSection> {
           children: [
             const Text('Quick Actions', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
             const SizedBox(height: 16),
-            _quickAction(context, Icons.add_box_rounded, 'Add New Product', 'Add a product to the store', const Color(0xFFFF9EAA),
+            _quickAction(context, Icons.add_box_rounded, 'Add New Product', 'Add a product to the store', Theme.of(context).colorScheme.primary,
               onTap: () {
                 final adminPanel = context.findAncestorStateOfType<_AdminPanelState>();
                 if (adminPanel != null) adminPanel.setState(() => adminPanel._selectedIndex = 1);
               },
             ),
             const SizedBox(height: 10),
-            _quickAction(context, Icons.receipt_long_rounded, 'View All Orders', 'Review all customer orders', const Color(0xFFFF9EAA),
+            _quickAction(context, Icons.receipt_long_rounded, 'View All Orders', 'Review all customer orders', Theme.of(context).colorScheme.primary,
               onTap: () {
                 final adminPanel = context.findAncestorStateOfType<_AdminPanelState>();
                 if (adminPanel != null) adminPanel.setState(() => adminPanel._selectedIndex = 2);
               },
             ),
             const SizedBox(height: 10),
-            _quickAction(context, Icons.people_rounded, 'Manage Users', 'View and manage all users', const Color(0xFFFF9EAA),
+            _quickAction(context, Icons.people_rounded, 'Manage Users', 'View and manage all users', Theme.of(context).colorScheme.primary,
               onTap: () {
                 final adminPanel = context.findAncestorStateOfType<_AdminPanelState>();
                 if (adminPanel != null) adminPanel.setState(() => adminPanel._selectedIndex = 3);
@@ -583,10 +583,10 @@ class _DashboardSectionState extends State<_DashboardSection> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              _buildStatCard(theme, 'Total Products', '${products.length}', Icons.inventory_2_rounded, const Color(0xFFFF9EAA)),
-              _buildStatCard(theme, 'Total Orders', '$_totalOrders', Icons.receipt_long_rounded, const Color(0xFFFF9EAA)),
-              _buildStatCard(theme, 'Total Users', '$_totalUsers', Icons.people_rounded, const Color(0xFFFF9EAA)),
-              _buildStatCard(theme, 'Total Revenue', '\$${_totalRevenue.toStringAsFixed(2)}', Icons.attach_money_rounded, const Color(0xFFFF9EAA)),
+              _buildStatCard(theme, 'Total Products', '${products.length}', Icons.inventory_2_rounded, Theme.of(context).colorScheme.primary),
+              _buildStatCard(theme, 'Total Orders', '$_totalOrders', Icons.receipt_long_rounded, Theme.of(context).colorScheme.primary),
+              _buildStatCard(theme, 'Total Users', '$_totalUsers', Icons.people_rounded, Theme.of(context).colorScheme.primary),
+              _buildStatCard(theme, 'Total Revenue', '\$${_totalRevenue.toStringAsFixed(2)}', Icons.attach_money_rounded, Theme.of(context).colorScheme.primary),
             ],
           ),
           const SizedBox(height: 24),
@@ -644,7 +644,7 @@ class _DashboardSectionState extends State<_DashboardSection> {
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFFFF9EAA), size: 20),
+            Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -655,7 +655,7 @@ class _DashboardSectionState extends State<_DashboardSection> {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFFFF9EAA), size: 16),
+            Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.primary, size: 16),
           ],
         ),
       ),
@@ -1055,14 +1055,14 @@ class _ProductsSection extends StatelessWidget {
                 onPressed: () => _showCategoryManager(context),
                 icon: const Icon(Icons.category_rounded, size: 16),
                 label: const Text('Categories', style: TextStyle(fontFamily: 'Outfit')),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFFFF9EAA), elevation: 0, side: const BorderSide(color: Color(0xFFFF9EAA))),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Theme.of(context).colorScheme.primary, elevation: 0, side: BorderSide(color: Theme.of(context).colorScheme.primary)),
               ),
               const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () => _showProductForm(context),
                 icon: const Icon(Icons.add_rounded, size: 16),
                 label: const Text('Add Product', style: TextStyle(fontFamily: 'Outfit')),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF9EAA), foregroundColor: Colors.white, elevation: 0),
+                style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary, foregroundColor: Colors.white, elevation: 0),
               ),
             ],
           ),
@@ -1091,7 +1091,7 @@ class _ProductsSection extends StatelessWidget {
                                   errorBuilder: (_, __, ___) => Container(
                                     width: 64, height: 64,
                                     color: theme.colorScheme.onSurface.withOpacity(0.05),
-                                    child: const Icon(Icons.child_care_rounded, size: 28, color: Color(0xFFFF9EAA)),
+                                    child: Icon(Icons.child_care_rounded, size: 28, color: Theme.of(context).colorScheme.primary),
                                   ),
                                 ),
                               ),
@@ -1107,13 +1107,13 @@ class _ProductsSection extends StatelessWidget {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFFF9EAA).withOpacity(0.08),
+                                            color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
                                             borderRadius: BorderRadius.circular(6),
                                           ),
-                                          child: Text(p.category, style: TextStyle(fontSize: 10, color: const Color(0xFFFF9EAA), fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+                                          child: Text(p.category, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
                                         ),
                                         const SizedBox(width: 8),
-                                        Text('\$${p.price.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, fontFamily: 'Outfit', color: Color(0xFFFF9EAA))),
+                                        Text('\$${p.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, fontFamily: 'Outfit', color: Theme.of(context).colorScheme.primary)),
                                       ],
                                     ),
                                     const SizedBox(height: 6),
@@ -1122,13 +1122,13 @@ class _ProductsSection extends StatelessWidget {
                                         Container(
                                           width: 7, height: 7,
                                           decoration: BoxDecoration(
-                                            color: p.stock == 0 ? const Color(0xFFFF9EAA) : Colors.black26,
+                                            color: p.stock == 0 ? Theme.of(context).colorScheme.primary : Colors.black26,
                                             shape: BoxShape.circle,
                                           ),
                                         ),
                                         const SizedBox(width: 6),
                                         Text(p.stock == 0 ? 'Out of stock' : '${p.stock} in stock',
-                                          style: TextStyle(fontSize: 11, color: p.stock == 0 ? const Color(0xFFFF9EAA) : Colors.black54, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
+                                          style: TextStyle(fontSize: 11, color: p.stock == 0 ? Theme.of(context).colorScheme.primary : Colors.black54, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
                                         ),
                                       ],
                                     ),
@@ -1139,7 +1139,7 @@ class _ProductsSection extends StatelessWidget {
                                 children: [
                                   IconButton(
                                     icon: const Icon(Icons.edit_rounded, size: 20),
-                                    color: const Color(0xFFFF9EAA),
+                                    color: Theme.of(context).colorScheme.primary,
                                     onPressed: () => _showProductForm(context, product: p),
                                     constraints: const BoxConstraints(),
                                     padding: const EdgeInsets.all(8),
@@ -1168,7 +1168,7 @@ class _ProductsSection extends StatelessWidget {
                                                 }
                                                 if (ctx.mounted) Navigator.of(ctx).pop();
                                               },
-                                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF9EAA), foregroundColor: Colors.white, elevation: 0),
+                                              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary, foregroundColor: Colors.white, elevation: 0),
                                               child: const Text('Delete', style: TextStyle(fontFamily: 'Outfit')),
                                             ),
                                           ],
@@ -1233,12 +1233,12 @@ class _ProductsSection extends StatelessWidget {
                                           Container(
                                             width: 8, height: 8,
                                             decoration: BoxDecoration(
-                                              color: p.stock == 0 ? const Color(0xFFFF9EAA) : Colors.black26,
+                                              color: p.stock == 0 ? Theme.of(context).colorScheme.primary : Colors.black26,
                                               shape: BoxShape.circle,
                                             ),
                                           ),
                                           const SizedBox(width: 6),
-                                          Text('${p.stock}', style: TextStyle(fontSize: 13, color: p.stock == 0 ? const Color(0xFFFF9EAA) : theme.colorScheme.onSurface, fontWeight: FontWeight.w600, fontFamily: 'Outfit')),
+                                          Text('${p.stock}', style: TextStyle(fontSize: 13, color: p.stock == 0 ? Theme.of(context).colorScheme.primary : theme.colorScheme.onSurface, fontWeight: FontWeight.w600, fontFamily: 'Outfit')),
                                         ],
                                       ),
                                     ),
@@ -1248,7 +1248,7 @@ class _ProductsSection extends StatelessWidget {
                                         children: [
                                           IconButton(
                                             icon: const Icon(Icons.edit_rounded, size: 18),
-                                            color: const Color(0xFFFF9EAA),
+                                            color: Theme.of(context).colorScheme.primary,
                                             tooltip: 'Edit',
                                             padding: EdgeInsets.zero,
                                             onPressed: () => _showProductForm(context, product: p),
@@ -1395,7 +1395,7 @@ class _OrdersSectionState extends State<_OrdersSection> {
                         
                         return ListTile(
                           leading: const CircleAvatar(
-                            backgroundColor: Color(0xFFFF9EAA),
+                            backgroundColor: Theme.of(context).colorScheme.primary,
                             child: Icon(Icons.local_offer_rounded, color: Colors.white, size: 18),
                           ),
                           title: Text(v.code, style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
@@ -1491,7 +1491,7 @@ class _OrdersSectionState extends State<_OrdersSection> {
   Color _statusColor(String status) {
     switch (status) {
       case 'Delivered':
-        return const Color(0xFFFF9EAA);
+        return Theme.of(context).colorScheme.primary;
       case 'Cancelled':
         return Colors.black38;
       default:
@@ -1701,9 +1701,9 @@ class _OrdersSectionState extends State<_OrdersSection> {
                 label: const Text('Manage Vouchers', style: TextStyle(fontFamily: 'Outfit')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFFFF9EAA),
+                  foregroundColor: Theme.of(context).colorScheme.primary,
                   elevation: 0,
-                  side: const BorderSide(color: Color(0xFFFF9EAA)),
+                  side: BorderSide(color: Theme.of(context).colorScheme.primary),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1827,7 +1827,7 @@ class _OrdersSectionState extends State<_OrdersSection> {
                                     ),
                                     Text(
                                       '\$${total.toStringAsFixed(2)}',
-                                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFFFF9EAA), fontFamily: 'Outfit'),
+                                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.primary, fontFamily: 'Outfit'),
                                     ),
                                   ],
                                 ),
@@ -1906,7 +1906,7 @@ class _OrdersSectionState extends State<_OrdersSection> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text('\$${total.toStringAsFixed(2)}',
-                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFFF9EAA), fontFamily: 'Outfit')),
+                                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary, fontFamily: 'Outfit')),
                                             if (order['promoCode'] != null)
                                               Text(
                                                 'Voucher: ${order['promoCode']}',
@@ -2060,7 +2060,7 @@ class _UsersSectionState extends State<_UsersSection> {
               ElevatedButton.icon(
                 icon: Icon(isNew ? Icons.person_add_rounded : Icons.save_rounded, size: 16),
                 label: Text(isNew ? 'Add User' : 'Save Changes', style: const TextStyle(fontFamily: 'Outfit')),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF9EAA), foregroundColor: Colors.white, elevation: 0),
+                style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary, foregroundColor: Colors.white, elevation: 0),
                 onPressed: () async {
                   if (!formKey.currentState!.validate()) return;
                   
@@ -2160,7 +2160,7 @@ class _UsersSectionState extends State<_UsersSection> {
                 onPressed: () => _showUserForm(context),
                 icon: const Icon(Icons.add_rounded, size: 16),
                 label: const Text('Add User', style: TextStyle(fontFamily: 'Outfit')),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF9EAA), foregroundColor: Colors.white, elevation: 0),
+                style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary, foregroundColor: Colors.white, elevation: 0),
               ),
               const SizedBox(width: 12),
               IconButton(onPressed: _loadUsers, icon: const Icon(Icons.refresh_rounded), tooltip: 'Refresh'),
@@ -2194,11 +2194,11 @@ class _UsersSectionState extends State<_UsersSection> {
                             children: [
                               CircleAvatar(
                                 radius: 24,
-                                backgroundColor: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.2) : (isDelivery ? Colors.blue.withOpacity(0.2) : Colors.black.withOpacity(0.05)),
+                                backgroundColor: isAdmin ? Theme.of(context).colorScheme.primary.withOpacity(0.2) : (isDelivery ? Colors.blue.withOpacity(0.2) : Colors.black.withOpacity(0.05)),
                                 child: Icon(
                                   isAdmin ? Icons.admin_panel_settings_rounded : (isDelivery ? Icons.local_shipping_rounded : Icons.person_rounded),
                                   size: 22,
-                                  color: isAdmin ? const Color(0xFFFF9EAA) : (isDelivery ? Colors.blue : Colors.black54),
+                                  color: isAdmin ? Theme.of(context).colorScheme.primary : (isDelivery ? Colors.blue : Colors.black54),
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -2223,12 +2223,12 @@ class _UsersSectionState extends State<_UsersSection> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                           decoration: BoxDecoration(
-                                            color: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.12) : Colors.black.withOpacity(0.04),
+                                            color: isAdmin ? Theme.of(context).colorScheme.primary.withOpacity(0.12) : Colors.black.withOpacity(0.04),
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
                                             isAdmin ? 'Admin' : 'User',
-                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isAdmin ? const Color(0xFFFF9EAA) : Colors.black54, fontFamily: 'Outfit'),
+                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isAdmin ? Theme.of(context).colorScheme.primary : Colors.black54, fontFamily: 'Outfit'),
                                           ),
                                         ),
                                       ],
@@ -2239,7 +2239,7 @@ class _UsersSectionState extends State<_UsersSection> {
                                         children: [
                                           _userActionBtn(
                                             icon: Icons.edit_rounded,
-                                            color: const Color(0xFFFF9EAA),
+                                            color: Theme.of(context).colorScheme.primary,
                                             tooltip: 'Edit User',
                                             onTap: () => _showUserForm(context, user: user),
                                           ),
@@ -2253,7 +2253,7 @@ class _UsersSectionState extends State<_UsersSection> {
                                           const SizedBox(width: 4),
                                           _userActionBtn(
                                             icon: isAdmin ? Icons.person_remove_rounded : Icons.shield_rounded,
-                                            color: isAdmin ? Colors.black38 : const Color(0xFFFF9EAA),
+                                            color: isAdmin ? Colors.black38 : Theme.of(context).colorScheme.primary,
                                             tooltip: isAdmin ? 'Revoke Admin' : 'Make Admin',
                                             onTap: () => _toggleUserRole(uid, role),
                                           ),
@@ -2313,11 +2313,11 @@ class _UsersSectionState extends State<_UsersSection> {
                                   children: [
                                     CircleAvatar(
                                       radius: 16,
-                                      backgroundColor: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.2) : Colors.black.withOpacity(0.05),
+                                      backgroundColor: isAdmin ? Theme.of(context).colorScheme.primary.withOpacity(0.2) : Colors.black.withOpacity(0.05),
                                       child: Icon(
                                         isAdmin ? Icons.admin_panel_settings_rounded : Icons.person_rounded,
                                         size: 16,
-                                        color: isAdmin ? const Color(0xFFFF9EAA) : Colors.black54,
+                                        color: isAdmin ? Theme.of(context).colorScheme.primary : Colors.black54,
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -2334,12 +2334,12 @@ class _UsersSectionState extends State<_UsersSection> {
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                         decoration: BoxDecoration(
-                                          color: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.12) : Colors.black.withOpacity(0.04),
+                                          color: isAdmin ? Theme.of(context).colorScheme.primary.withOpacity(0.12) : Colors.black.withOpacity(0.04),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
                                           isAdmin ? 'Admin' : 'User',
-                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isAdmin ? const Color(0xFFFF9EAA) : Colors.black54, fontFamily: 'Outfit'),
+                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isAdmin ? Theme.of(context).colorScheme.primary : Colors.black54, fontFamily: 'Outfit'),
                                         ),
                                       ),
                                     ),
@@ -2351,7 +2351,7 @@ class _UsersSectionState extends State<_UsersSection> {
                                               children: [
                                                 _userActionBtn(
                                                   icon: Icons.edit_rounded,
-                                                  color: const Color(0xFFFF9EAA),
+                                                  color: Theme.of(context).colorScheme.primary,
                                                   tooltip: 'Edit',
                                                   onTap: () => _showUserForm(context, user: user),
                                                 ),
@@ -2365,7 +2365,7 @@ class _UsersSectionState extends State<_UsersSection> {
                                                 const SizedBox(width: 2),
                                                 _userActionBtn(
                                                   icon: isAdmin ? Icons.person_remove_rounded : Icons.shield_rounded,
-                                                  color: isAdmin ? Colors.black38 : const Color(0xFFFF9EAA),
+                                                  color: isAdmin ? Colors.black38 : Theme.of(context).colorScheme.primary,
                                                   tooltip: isAdmin ? 'Revoke Admin' : 'Make Admin',
                                                   onTap: () => _toggleUserRole(uid, role),
                                                 ),
@@ -2444,7 +2444,7 @@ class _UsersSectionState extends State<_UsersSection> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('User "$name" deleted successfully'),
-            backgroundColor: const Color(0xFFFF9EAA),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -2568,7 +2568,7 @@ class _SupportSectionState extends State<_SupportSection> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: (status == 'Open' ? const Color(0xFFFF9EAA) : Colors.black12).withOpacity(0.12),
+                              color: (status == 'Open' ? Theme.of(context).colorScheme.primary : Colors.black12).withOpacity(0.12),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -2576,7 +2576,7 @@ class _SupportSectionState extends State<_SupportSection> {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: status == 'Open' ? const Color(0xFFFF9EAA) : Colors.black54,
+                                color: status == 'Open' ? Theme.of(context).colorScheme.primary : Colors.black54,
                               ),
                             ),
                           ),
@@ -2602,7 +2602,7 @@ class _SupportSectionState extends State<_SupportSection> {
                           
                           return Card(
                             margin: const EdgeInsets.only(bottom: 8),
-                            color: sender == 'Admin' ? const Color(0xFFFF9EAA).withOpacity(0.08) : Colors.black.withOpacity(0.03),
+                            color: sender == 'Admin' ? Theme.of(context).colorScheme.primary.withOpacity(0.08) : Colors.black.withOpacity(0.03),
                             child: Padding(
                               padding: const EdgeInsets.all(12.0),
                               child: Column(
@@ -2807,7 +2807,7 @@ class _SupportSectionState extends State<_SupportSection> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: (status == 'Open' ? const Color(0xFFFF9EAA) : Colors.black12).withOpacity(0.12),
+                                        color: (status == 'Open' ? Theme.of(context).colorScheme.primary : Colors.black12).withOpacity(0.12),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
@@ -2815,7 +2815,7 @@ class _SupportSectionState extends State<_SupportSection> {
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
-                                          color: status == 'Open' ? const Color(0xFFFF9EAA) : Colors.black54,
+                                          color: status == 'Open' ? Theme.of(context).colorScheme.primary : Colors.black54,
                                           fontFamily: 'Outfit',
                                         ),
                                       ),
@@ -2902,7 +2902,7 @@ class _SupportSectionState extends State<_SupportSection> {
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: (status == 'Open' ? const Color(0xFFFF9EAA) : Colors.black12).withOpacity(0.12),
+                                            color: (status == 'Open' ? Theme.of(context).colorScheme.primary : Colors.black12).withOpacity(0.12),
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
@@ -2910,7 +2910,7 @@ class _SupportSectionState extends State<_SupportSection> {
                                             style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.bold,
-                                              color: status == 'Open' ? const Color(0xFFFF9EAA) : Colors.black54,
+                                              color: status == 'Open' ? Theme.of(context).colorScheme.primary : Colors.black54,
                                               fontFamily: 'Outfit',
                                             ),
                                           ),
@@ -3054,7 +3054,7 @@ class _SettingsSectionState extends State<_SettingsSection> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('All Settings saved successfully!'),
-          backgroundColor: Color(0xFFFF9EAA),
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
     }
@@ -3200,7 +3200,7 @@ class _SettingsSectionState extends State<_SettingsSection> {
                   icon: const Icon(Icons.save_rounded, size: 20),
                   label: const Text('Save All Settings', style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9EAA),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 18),
@@ -3221,7 +3221,7 @@ class _SettingsSectionState extends State<_SettingsSection> {
   Widget _buildSectionHeader(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: const Color(0xFFFF9EAA)),
+        Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
         const SizedBox(width: 8),
         Text(
           title,
@@ -3245,7 +3245,7 @@ class _SettingsSectionState extends State<_SettingsSection> {
       title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Outfit')),
       subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.black38, fontFamily: 'Outfit')),
       value: value,
-      activeColor: const Color(0xFFFF9EAA),
+      activeColor: Theme.of(context).colorScheme.primary,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       onChanged: onChanged,
     );
@@ -3293,12 +3293,12 @@ class _RevenueTrendChart extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF9EAA).withOpacity(0.12),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
                   '+12.4% this week',
-                  style: TextStyle(fontSize: 10, color: Color(0xFFFF9EAA), fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
+                  style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
                 ),
               ),
             ],
@@ -3396,8 +3396,8 @@ class _ChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          const Color(0xFFFF9EAA).withOpacity(0.35),
-          const Color(0xFFFF9EAA).withOpacity(0.01),
+          Theme.of(context).colorScheme.primary.withOpacity(0.35),
+          Theme.of(context).colorScheme.primary.withOpacity(0.01),
         ],
       ).createShader(Rect.fromLTRB(paddingLeft, 0, size.width, chartHeight));
     canvas.drawPath(fillPath, fillPaint);
@@ -3421,7 +3421,7 @@ class _ChartPainter extends CustomPainter {
     }
 
     final Paint linePaint = Paint()
-      ..color = const Color(0xFFFF9EAA)
+      ..color = Theme.of(context).colorScheme.primary
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -3432,7 +3432,7 @@ class _ChartPainter extends CustomPainter {
       ..color = Colors.white
       ..style = PaintingStyle.fill;
     final Paint pointPaint = Paint()
-      ..color = const Color(0xFFFF9EAA)
+      ..color = Theme.of(context).colorScheme.primary
       ..style = PaintingStyle.fill;
 
     for (int i = 0; i < points.length; i++) {
@@ -3511,7 +3511,7 @@ class _CategoryDistributionChart extends StatelessWidget {
                             value: percent,
                             minHeight: 6,
                             backgroundColor: Colors.black.withOpacity(0.04),
-                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF9EAA)),
+                            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                           ),
                         ),
                       ),

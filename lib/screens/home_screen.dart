@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Row(
             children: [
-              Icon(Icons.local_shipping_rounded, color: Color(0xFFFF9EAA)),
+              Icon(Icons.local_shipping_rounded, color: Theme.of(context).colorScheme.primary),
               SizedBox(width: 8),
               Text(
                 'Order Out For Delivery!',
@@ -96,9 +96,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF9EAA).withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFFF9EAA).withOpacity(0.3)),
+                  border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
                 ),
                 child: Text(
                   otp,
@@ -106,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 8,
-                    color: Color(0xFFFF9EAA),
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -120,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK', style: TextStyle(color: Color(0xFFFF9EAA), fontWeight: FontWeight.bold)),
+              child: Text('OK', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -221,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFFFF9EAA).withOpacity(0.12)
+              ? Theme.of(context).colorScheme.primary.withOpacity(0.12)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
@@ -230,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Icon(
               isSelected ? activeIcon : inactiveIcon,
-              color: isSelected ? const Color(0xFFFF9EAA) : Colors.black38,
+              color: isSelected ? Theme.of(context).colorScheme.primary : Colors.black38,
               size: 22,
             ),
             const SizedBox(height: 2),
@@ -239,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(
                 fontSize: 9,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? const Color(0xFFFF9EAA) : Colors.black38,
+                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.black38,
                 fontFamily: 'Outfit',
               ),
             ),
@@ -289,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Container(
                 padding: const EdgeInsets.all(3),
                 decoration: const BoxDecoration(
-                  color: Color(0xFFFF9EAA),
+                  color: Theme.of(context).colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
                 constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
@@ -365,7 +365,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Icon(
                                     Icons.admin_panel_settings_rounded,
                                     size: 13,
-                                    color: Color(0xFFFF9EAA),
+                                    color: Theme.of(context).colorScheme.primary,
                                   ),
                                   SizedBox(width: 4),
                                   Text(
@@ -373,7 +373,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFFFF9EAA),
+                                      color: Theme.of(context).colorScheme.primary,
                                       fontFamily: 'Outfit',
                                     ),
                                   ),
@@ -430,7 +430,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: const Color(0xFFFF9EAA).withOpacity(0.3),
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                               width: 2,
                             ),
                           ),
@@ -449,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         .toUpperCase(),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFFFF9EAA),
+                                      color: Theme.of(context).colorScheme.primary,
                                       fontFamily: 'Outfit',
                                     ),
                                   )
@@ -472,14 +472,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 230,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFFFF9EAA), Color(0xFFFFB347)],
+                    colors: [Theme.of(context).colorScheme.primary, Color(0xFFFFB347)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF9EAA).withOpacity(0.38),
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.38),
                       blurRadius: 28,
                       offset: const Offset(0, 12),
                     ),
@@ -594,7 +594,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: const Text(
                                   'Shop Now →',
                                   style: TextStyle(
-                                    color: Color(0xFFFF9EAA),
+                                    color: Theme.of(context).colorScheme.primary,
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     fontFamily: 'Outfit',
@@ -639,7 +639,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             'See all',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFFFF9EAA),
+                              color: Theme.of(context).colorScheme.primary,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Outfit',
                             ),
@@ -690,9 +690,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                             cat.imageUrl,
                                             fit: BoxFit.cover,
                                             errorBuilder: (context, error, stackTrace) =>
-                                                const Icon(Icons.category_rounded, color: Color(0xFFFF9EAA)),
+                                                Icon(Icons.category_rounded, color: Theme.of(context).colorScheme.primary),
                                           )
-                                        : const Icon(Icons.category_rounded, color: Color(0xFFFF9EAA)),
+                                        : Icon(Icons.category_rounded, color: Theme.of(context).colorScheme.primary),
                                   ),
                                 ),
                                 const SizedBox(height: 10),
@@ -752,7 +752,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             'View all',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFFFF9EAA),
+                              color: Theme.of(context).colorScheme.primary,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Outfit',
                             ),
@@ -767,7 +767,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: newArrivals.isEmpty
                         ? const Center(
                             child: CircularProgressIndicator(
-                              color: Color(0xFFFF9EAA),
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           )
                         : ListView.builder(
@@ -820,7 +820,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   child: Icon(
                                                     Icons.child_care_rounded,
                                                     size: 48,
-                                                    color: Color(0xFFFF9EAA),
+                                                    color: Theme.of(context).colorScheme.primary,
                                                   ),
                                                 ),
                                               ),
@@ -858,7 +858,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   style: const TextStyle(
                                                     fontSize: 15,
                                                     fontWeight: FontWeight.w900,
-                                                    color: Color(0xFFFF9EAA),
+                                                    color: Theme.of(context).colorScheme.primary,
                                                     fontFamily: 'Outfit',
                                                   ),
                                                 ),
@@ -914,7 +914,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icon(
                           Icons.local_offer_rounded,
                           size: 22,
-                          color: Color(0xFFFF9EAA),
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                         SizedBox(width: 10),
                         Text(
@@ -955,7 +955,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF9EAA).withOpacity(0.1),
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: const Color(
@@ -968,7 +968,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFFFF9EAA),
+                                  color: Theme.of(context).colorScheme.primary,
                                   fontFamily: 'Outfit',
                                   letterSpacing: 0.5,
                                 ),
@@ -1045,7 +1045,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: const Icon(
                         Icons.auto_awesome_rounded,
-                        color: Color(0xFFFF9EAA),
+                        color: Theme.of(context).colorScheme.primary,
                         size: 28,
                       ),
                     ),
@@ -1118,10 +1118,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         fontFamily: 'Outfit',
-                        color: Color(0xFFFF9EAA),
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.underline,
-                        decorationColor: Color(0xFFFF9EAA),
+                        decorationColor: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ),
@@ -1156,7 +1156,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: color,
               borderRadius: BorderRadius.circular(15),
             ),
-            child: Icon(icon, color: const Color(0xFFFF9EAA), size: 22),
+            child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1283,7 +1283,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: const Color(0xFFFF9EAA).withOpacity(0.2),
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                               width: 2,
                             ),
                           ),
@@ -1303,7 +1303,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         'P',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFFFF9EAA),
+                                      color: Theme.of(context).colorScheme.primary,
                                     ),
                                   )
                                 : null,
