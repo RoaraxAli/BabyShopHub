@@ -242,8 +242,18 @@ class AuthProvider extends ChangeNotifier {
     debugPrint('========================================================================\n');
 
     // Direct Zoho SMTP Setup
+    if (kIsWeb) {
+      debugPrint('Skipping real SMTP email send on Web platform (RawSocket unsupported).');
+      return;
+    }
     final String username = 'no-reply@theali.app';
     final String password = 'YOUR_ZOHO_APP_PASSWORD_HERE'; // Replace with actual app password
+    
+    if (password == 'YOUR_ZOHO_APP_PASSWORD_HERE') {
+      debugPrint('Skipping real SMTP email send because Zoho password is not configured.');
+      return;
+    }
+
     final smtpServer = SmtpServer('smtp.zoho.com',
         port: 465,
         ssl: true,
