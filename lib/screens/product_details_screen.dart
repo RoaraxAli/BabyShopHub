@@ -788,12 +788,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 )),
                         ]
                       ],
-                    );
-                  },
-                );
-              },
-            ),
+                    ),
+                  );
+                },
+              );
+            },
           ),
+        ),
 
           // 3. Overlay Back and Wishlist buttons
           Positioned(
