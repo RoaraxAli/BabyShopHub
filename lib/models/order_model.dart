@@ -28,11 +28,20 @@ class OrderProductSnapshot {
   }
 
   factory OrderProductSnapshot.fromMap(Map<String, dynamic> map) {
+    double parsePrice(dynamic value) {
+      if (value is num) return value.toDouble();
+      if (value is String) {
+        final sanitized = value.replaceAll(RegExp(r'[^0-9.]'), '');
+        return double.tryParse(sanitized) ?? 0.0;
+      }
+      return 0.0;
+    }
+    
     return OrderProductSnapshot(
       id: map['id'] ?? '',
       name: map['name'] ?? '',
       quantity: (map['quantity'] as num? ?? 1).toInt(),
-      price: (map['price'] as num? ?? 0.0).toDouble(),
+      price: parsePrice(map['price']),
       imageUrl: map['imageUrl'] ?? '',
     );
   }
@@ -79,6 +88,8 @@ class OrderModel {
   final DateTime createdAt;
   final String? promoCode;
   final double discount;
+  final String? driverId;
+  final String? deliveryOTP;
 
   OrderModel({
     required this.id,
@@ -91,6 +102,8 @@ class OrderModel {
     required this.createdAt,
     this.promoCode,
     this.discount = 0.0,
+    this.driverId,
+    this.deliveryOTP,
   });
 
   String get currentStatus {
@@ -120,6 +133,8 @@ class OrderModel {
       'createdAt': Timestamp.fromDate(createdAt),
       'promoCode': promoCode,
       'discount': discount,
+      'driverId': driverId,
+      'deliveryOTP': deliveryOTP,
     };
   }
 
@@ -154,11 +169,23 @@ class OrderModel {
       userId: map['userId'] ?? '',
       address: map['address'] ?? '',
       items: parsedItems,
-      total: (map['total'] as num? ?? 0.0).toDouble(),
+      total: _parseDouble(map['total']),
       statusHistory: history,
       createdAt: created,
-      promoCode: map['promoCode'] as String?,
+      promoCode: map['promoCode'],
       discount: (map['discount'] as num? ?? 0.0).toDouble(),
+      driverId: map['driverId'] as String?,
+      deliveryOTP: map['deliveryOTP'] as String?,
     );
+  }
+
+  // Helper
+  static double _parseDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      final sanitized = value.replaceAll(RegExp(r'[^0-9.]'), '');
+      return double.tryParse(sanitized) ?? 0.0;
+    }
+    return 0.0;
   }
 }

@@ -22,6 +22,8 @@ class ShopProvider extends ChangeNotifier {
   final List<CategoryModel> _categories = [];
   final List<VoucherModel> _vouchers = [];
 
+  String _currencySymbol = '\$';
+
   List<Product> get products => _products;
   List<CartItem> get cart => _cart;
   List<String> get wishlist => _wishlist;
@@ -30,6 +32,7 @@ class ShopProvider extends ChangeNotifier {
   double get promoDiscount => _promoDiscount;
   List<CategoryModel> get categories => _categories;
   List<VoucherModel> get vouchers => _vouchers;
+  String get currencySymbol => _currencySymbol;
 
   String _searchQuery = '';
   String _selectedCategory = 'All';
@@ -41,6 +44,18 @@ class ShopProvider extends ChangeNotifier {
     _loadProductsFromFirestore();
     _loadCategoriesFromFirestore();
     _loadVouchersFromFirestore();
+    _loadCurrencySettings();
+  }
+
+  Future<void> _loadCurrencySettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _currencySymbol = prefs.getString('currency_symbol') ?? '\$';
+    notifyListeners();
+  }
+
+  Future<void> updateCurrency(String symbol) async {
+    _currencySymbol = symbol;
+    notifyListeners();
   }
 
   // Sync products with Firestore online if available, else fallback to local seed data
@@ -99,6 +114,52 @@ class ShopProvider extends ChangeNotifier {
             reviews: [],
           ));
         }
+
+        // Fetch all reviews and attach them to products
+        try {
+          final reviewSnap = await FirebaseFirestore.instance.collection('reviews').get();
+          for (var reviewDoc in reviewSnap.docs) {
+            final reviewData = reviewDoc.data();
+            final productId = reviewData['productId'] as String?;
+            if (productId != null) {
+              final productIdx = _products.indexWhere((p) => p.id == productId);
+              if (productIdx >= 0) {
+                final dateVal = reviewData['createdAt'];
+                String dateStr = '';
+                if (dateVal is Timestamp) {
+                  dateStr = '${dateVal.toDate().month}/${dateVal.toDate().day}/${dateVal.toDate().year}';
+                }
+                _products[productIdx].reviews.add(Review(
+                  user: reviewData['user'] ?? 'Anonymous',
+                  rating: (reviewData['rating'] ?? 5.0) as double,
+                  comment: reviewData['comment'] ?? '',
+                  date: dateStr,
+                ));
+              }
+            }
+          }
+          // Calculate average ratings and distributions based on reviews
+          for (int i = 0; i < _products.length; i++) {
+             final product = _products[i];
+             if (product.reviews.isNotEmpty) {
+                double total = 0;
+                final dist = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0};
+                for (var r in product.reviews) {
+                   total += r.rating;
+                   final rInt = r.rating.round().clamp(1, 5).toString();
+                   dist[rInt] = (dist[rInt] ?? 0) + 1;
+                }
+                _products[i] = product.copyWith(
+                   rating: double.parse((total / product.reviews.length).toStringAsFixed(1)),
+                   reviewsCount: product.reviews.length,
+                   ratingDistribution: dist,
+                );
+             }
+          }
+        } catch (re) {
+           debugPrint('[SHOP PROVIDER ERROR] Failed fetching reviews: $re');
+        }
+
         notifyListeners();
       }
     } catch (e) {
@@ -348,6 +409,24 @@ class ShopProvider extends ChangeNotifier {
   /// Called by admin panel after product add/edit/delete
   Future<void> refreshProducts() => _loadProductsFromFirestore();
 
+  Future<void> addReview(String productId, double rating, String comment) async {
+    final user = FirebaseAuth.instance.currentUser;
+    final userName = user?.displayName ?? user?.email?.split('@').first ?? 'Anonymous';
+    
+    try {
+      await FirebaseFirestore.instance.collection('reviews').add({
+        'productId': productId,
+        'user': userName,
+        'rating': rating,
+        'comment': comment,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      await _loadProductsFromFirestore();
+    } catch (e) {
+      debugPrint('[SHOP PROVIDER ERROR] Failed to submit review: $e');
+    }
+  }
+
   void setSearchQuery(String query) {
     _searchQuery = query;
     notifyListeners();
@@ -410,7 +489,7 @@ class ShopProvider extends ChangeNotifier {
     if (index >= 0) {
       final v = _vouchers[index];
       if (sub < v.minPurchase) {
-        return 'Minimum purchase of \$${v.minPurchase.toStringAsFixed(2)} required for this code';
+          return 'Minimum purchase of $_currencySymbol${v.minPurchase.toStringAsFixed(2)} required for this code';
       }
       _appliedPromoCode = cleanCode;
       _recalculateDiscount();
@@ -531,12 +610,12 @@ class ShopProvider extends ChangeNotifier {
           final name = item['name'] ?? '';
           final qty = item['quantity'] ?? 1;
           final price = (item['price'] ?? 0.0) as double;
-          itemsRows += '<tr><td style="padding:8px;border-bottom:1px solid #eee;">$name (x$qty)</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:right;">' + '\$${(price * qty).toStringAsFixed(2)}' + '</td></tr>';
+          itemsRows += '<tr><td style="padding:8px;border-bottom:1px solid #eee;">$name (x$qty)</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:right;">$_currencySymbol${(price * qty).toStringAsFixed(2)}</td></tr>';
         }
       }
       String discountRow = '';
       if (promoCode != null && discount > 0) {
-        discountRow = '<tr><td style="padding:8px;color:#2e7d32;font-weight:bold;">Discount ($promoCode):</td><td style="padding:8px;text-align:right;color:#2e7d32;font-weight:bold;">-\$${discount.toStringAsFixed(2)}</td></tr>';
+        discountRow = '<tr><td style="padding:8px;color:#2e7d32;font-weight:bold;">Discount ($promoCode):</td><td style="padding:8px;text-align:right;color:#2e7d32;font-weight:bold;">-$_currencySymbol${discount.toStringAsFixed(2)}</td></tr>';
       }
       htmlContent = '''
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #eee;border-radius:12px;">
@@ -547,7 +626,7 @@ class ShopProvider extends ChangeNotifier {
             <tbody>$itemsRows</tbody>
             <tfoot>
               $discountRow
-              <tr><td style="padding:8px;font-weight:bold;">Grand Total:</td><td style="padding:8px;font-weight:bold;text-align:right;color:#FF9EAA;">' + '\$${total.toStringAsFixed(2)}' + '</td></tr>
+              <tr><td style="padding:8px;font-weight:bold;">Grand Total:</td><td style="padding:8px;font-weight:bold;text-align:right;color:#FF9EAA;">$_currencySymbol${total.toStringAsFixed(2)}</td></tr>
             </tfoot>
           </table>
           <div style="background:#f9f9f9;padding:12px;border-radius:8px;">
@@ -567,7 +646,7 @@ class ShopProvider extends ChangeNotifier {
           <p>Your wishlisted item is now available:</p>
           <div style="border:1px solid #eee;border-radius:8px;padding:12px;margin:20px 0;">
             <h3 style="margin:0;color:#333;">$name</h3>
-            <p style="margin:4px 0 0;font-weight:bold;color:#FF9EAA;">' + '\$${price.toStringAsFixed(2)}' + '</p>
+            <p style="margin:4px 0 0;font-weight:bold;color:#FF9EAA;">$_currencySymbol${price.toStringAsFixed(2)}</p>
             <p style="margin:8px 0 0;font-size:12px;color:#2e7d32;font-weight:bold;">Only $stock items left in stock!</p>
           </div>
           <hr style="border:0;border-top:1px solid #eee;margin:20px 0;"/>

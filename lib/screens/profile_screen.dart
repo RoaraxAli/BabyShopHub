@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:image_picker/image_picker.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/auth_provider.dart';
 import '../services/cloudinary_service.dart';
 import '../theme/theme_provider.dart';
@@ -207,7 +209,7 @@ class ProfileScreen extends StatelessWidget {
             context,
             icon: Icons.security_rounded,
             title: '2FA Security Configuration',
-            subtitle: 'Secure logins with Google Authenticator (TOTP)',
+            subtitle: 'Secure logins with two-factor authentication',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const TwoFactorSetupSubScreen()),
@@ -229,7 +231,7 @@ class ProfileScreen extends StatelessWidget {
             context,
             icon: Icons.contact_support_outlined,
             title: 'Contact Customer Support',
-            subtitle: 'Get in touch with support via Zoho SMTP inquiry',
+            subtitle: 'Get in touch with customer support',
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const ContactUsSubScreen()),
@@ -813,41 +815,35 @@ class _TwoFactorSetupSubScreenState extends State<TwoFactorSetupSubScreen> {
                       label: const Text('Generate 2FA Secret Key'),
                     ),
                   ] else ...[
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.04),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                    Center(
+                      child: QrImageView(
+                        data: 'otpauth://totp/BabyShopHub:${Uri.encodeComponent(auth.currentUser?.email ?? 'User')}?secret=$_generatedSecret&issuer=BabyShopHub',
+                        version: QrVersions.auto,
+                        size: 200.0,
+                        backgroundColor: Colors.white,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Text(
-                            'Copy Secret Key Into Authenticator',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: SelectableText(
-                                  _generatedSecret!,
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy_all_rounded),
-                                onPressed: () {
-                                  Clipboard.setData(ClipboardData(text: _generatedSecret!));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Secret key copied to clipboard!')),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ],
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final uri = Uri.parse('otpauth://totp/BabyShopHub:${Uri.encodeComponent(auth.currentUser?.email ?? 'User')}?secret=$_generatedSecret&issuer=BabyShopHub');
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri);
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Could not open authenticator app automatically.')),
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.open_in_new_rounded),
+                      label: const Text('Open in Authenticator App'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                        foregroundColor: theme.colorScheme.primary,
+                        elevation: 0,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -994,7 +990,7 @@ class AboutUsSubScreen extends StatelessWidget {
 }
 
 // ==========================================
-// 5. Contact Us Sub-Screen (Zoho Support)
+// 5. Contact Us Sub-Screen
 // ==========================================
 class ContactUsSubScreen extends StatefulWidget {
   const ContactUsSubScreen({super.key});
@@ -1041,7 +1037,7 @@ class _ContactUsSubScreenState extends State<ContactUsSubScreen> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // 2. Register Zoho Support SMTP ticket document
+      // 2. Register Support SMTP ticket document
       await FirebaseFirestore.instance.collection('mail_triggers').add({
         'to': 'no-reply@theali.app',
         'type': 'SUPPORT_CONTACT',
@@ -1058,7 +1054,7 @@ class _ContactUsSubScreenState extends State<ContactUsSubScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Support request sent successfully via Zoho SMTP.'),
+          content: Text('Support request sent successfully.'),
           backgroundColor: Colors.green,
         ),
       );
@@ -1097,23 +1093,20 @@ class _ContactUsSubScreenState extends State<ContactUsSubScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Direct Zoho SMTP Message Routing',
+                'Direct Message Routing',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
-                readOnly: true,
-                validator: (val) => val == null || val.trim().isEmpty ? 'Enter your name' : null,
                 decoration: const InputDecoration(
-                  labelText: 'Name',
-                  prefixIcon: Icon(Icons.person_outline_rounded),
+                  labelText: 'Your Name',
+                  prefixIcon: Icon(Icons.person_outline),
                 ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
-                readOnly: true,
                 keyboardType: TextInputType.emailAddress,
                 validator: (val) {
                   if (val == null || val.isEmpty) return 'Enter email address';
@@ -1159,6 +1152,21 @@ class _ContactUsSubScreenState extends State<ContactUsSubScreen> {
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                       )
                     : const Text('Send Support Request'),
+              ),
+              const SizedBox(height: 32),
+              Center(
+                child: Text(
+                  'Or contact us directly at:',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Center(
+                child: Text(
+                  'no-reply@theali.app\n+1 (234) 567-890',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
             ],
           ),

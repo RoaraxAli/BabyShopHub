@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../services/auth_provider.dart';
 import '../home_screen.dart';
 import '../admin_panel.dart';
+import '../delivery_panel.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'otp_screen.dart';
@@ -49,10 +50,13 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } else {
-      // Success normal login
-      final isAdmin = auth.currentUser?.role == 'admin';
+      final role = auth.currentUser?.role ?? 'user';
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => isAdmin ? const AdminPanel() : const HomeScreen()),
+        MaterialPageRoute(builder: (context) {
+          if (role == 'admin') return const AdminPanel();
+          if (role == 'delivery') return const DeliveryPanel();
+          return const HomeScreen();
+        }),
       );
     }
   }
@@ -64,9 +68,13 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      final isAdmin = auth.currentUser?.role == 'admin';
+      final role = auth.currentUser?.role ?? 'user';
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => isAdmin ? const AdminPanel() : const HomeScreen()),
+        MaterialPageRoute(builder: (context) {
+          if (role == 'admin') return const AdminPanel();
+          if (role == 'delivery') return const DeliveryPanel();
+          return const HomeScreen();
+        }),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

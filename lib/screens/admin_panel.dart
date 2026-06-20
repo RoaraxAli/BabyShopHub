@@ -12,7 +12,10 @@ import '../models/voucher_model.dart';
 import '../models/order_model.dart';
 import 'home_screen.dart';
 import 'auth/login_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class AdminPanel extends StatefulWidget {
   const AdminPanel({super.key});
@@ -1993,6 +1996,7 @@ class _UsersSectionState extends State<_UsersSection> {
   void _showUserForm(BuildContext context, {Map<String, dynamic>? user}) {
     final nameCtrl = TextEditingController(text: user?['displayName'] ?? '');
     final emailCtrl = TextEditingController(text: user?['email'] ?? '');
+    final passwordCtrl = TextEditingController();
     String selectedRole = user?['role'] ?? 'user';
     final formKey = GlobalKey<FormState>();
     final isNew = user == null;
@@ -2025,12 +2029,23 @@ class _UsersSectionState extends State<_UsersSection> {
                       style: const TextStyle(fontSize: 14, fontFamily: 'Outfit'),
                       enabled: isNew,
                     ),
+                    if (isNew) ...[
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: passwordCtrl,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock_outline_rounded)),
+                        validator: (v) => v == null || v.length < 6 ? 'Min 6 chars' : null,
+                        style: const TextStyle(fontSize: 14, fontFamily: 'Outfit'),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       value: selectedRole,
                       items: const [
                         DropdownMenuItem(value: 'user', child: Text('User', style: TextStyle(fontFamily: 'Outfit'))),
                         DropdownMenuItem(value: 'admin', child: Text('Admin', style: TextStyle(fontFamily: 'Outfit'))),
+                        DropdownMenuItem(value: 'delivery', child: Text('Delivery Person', style: TextStyle(fontFamily: 'Outfit'))),
                       ],
                       onChanged: (v) => setDialogState(() => selectedRole = v ?? selectedRole),
                       decoration: const InputDecoration(labelText: 'Role', prefixIcon: Icon(Icons.shield_outlined)),
@@ -2060,9 +2075,26 @@ class _UsersSectionState extends State<_UsersSection> {
 
                   try {
                     if (isNew) {
-                      final docRef = FirebaseFirestore.instance.collection('users').doc();
-                      data['uid'] = docRef.id;
-                      await docRef.set(data);
+                      // Use Firebase Auth REST API to avoid IndexDB Web lock errors and prevent logging out admin
+                      final apiKey = Firebase.app().options.apiKey;
+                      final url = Uri.parse('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$apiKey');
+                      final response = await http.post(
+                        url,
+                        headers: {'Content-Type': 'application/json'},
+                        body: json.encode({
+                          'email': emailCtrl.text.trim(),
+                          'password': passwordCtrl.text,
+                          'returnSecureToken': false,
+                        }),
+                      );
+                      
+                      if (response.statusCode == 200) {
+                        final respData = json.decode(response.body);
+                        data['uid'] = respData['localId'];
+                        await FirebaseFirestore.instance.collection('users').doc(respData['localId']).set(data);
+                      } else {
+                        throw Exception('REST Auth error: ${response.body}');
+                      }
                     } else {
                       await FirebaseFirestore.instance.collection('users').doc(user['id']).update({
                         'displayName': nameCtrl.text.trim(),
@@ -2072,6 +2104,16 @@ class _UsersSectionState extends State<_UsersSection> {
                     _loadUsers();
                   } catch (e) {
                     debugPrint('[ADMIN USERS] Save failed: $e');
+                    String errorMessage = 'Failed to save user.';
+                    if (e.toString().contains('EMAIL_EXISTS')) {
+                      errorMessage = 'This email is already registered in Firebase Authentication.';
+                    } else if (e.toString().contains('REST Auth error')) {
+                      errorMessage = 'Authentication error. Please check details and try again.';
+                    }
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(errorMessage, style: const TextStyle(fontFamily: 'Outfit')), backgroundColor: Colors.red));
+                    }
+                    return; // Don't close the dialog if there's an error
                   }
                   if (ctx.mounted) Navigator.of(ctx).pop();
                 },
@@ -2137,6 +2179,7 @@ class _UsersSectionState extends State<_UsersSection> {
                       final role = user['role'] as String? ?? 'user';
                       final isCurrentUser = uid == currentUid;
                       final isAdmin = role == 'admin';
+                      final isDelivery = role == 'delivery';
 
                       return Card(
                         elevation: 0,
@@ -2151,11 +2194,11 @@ class _UsersSectionState extends State<_UsersSection> {
                             children: [
                               CircleAvatar(
                                 radius: 24,
-                                backgroundColor: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.2) : Colors.black.withOpacity(0.05),
+                                backgroundColor: isAdmin ? const Color(0xFFFF9EAA).withOpacity(0.2) : (isDelivery ? Colors.blue.withOpacity(0.2) : Colors.black.withOpacity(0.05)),
                                 child: Icon(
-                                  isAdmin ? Icons.admin_panel_settings_rounded : Icons.person_rounded,
+                                  isAdmin ? Icons.admin_panel_settings_rounded : (isDelivery ? Icons.local_shipping_rounded : Icons.person_rounded),
                                   size: 22,
-                                  color: isAdmin ? const Color(0xFFFF9EAA) : Colors.black54,
+                                  color: isAdmin ? const Color(0xFFFF9EAA) : (isDelivery ? Colors.blue : Colors.black54),
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -2345,7 +2388,10 @@ class _UsersSectionState extends State<_UsersSection> {
   }
 
   Future<void> _toggleUserRole(String uid, String currentRole) async {
-    final newRole = currentRole == 'admin' ? 'user' : 'admin';
+    String newRole = 'user';
+    if (currentRole == 'user') newRole = 'admin';
+    else if (currentRole == 'admin') newRole = 'delivery';
+
     try {
       await FirebaseFirestore.instance.collection('users').doc(uid).update({'role': newRole});
       await _loadUsers();
@@ -3004,6 +3050,7 @@ class _SettingsSectionState extends State<_SettingsSection> {
     
     if (mounted) {
       setState(() => _loading = false);
+      Provider.of<ShopProvider>(context, listen: false).updateCurrency(_currencySymbolController.text.trim());
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('All Settings saved successfully!'),

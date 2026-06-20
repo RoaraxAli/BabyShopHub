@@ -747,7 +747,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       .spaceBetween,
                                               children: [
                                                 Text(
-                                                  '\$${p.price.toStringAsFixed(2)}',
+                                                  '${shop.currencySymbol}${p.price.toStringAsFixed(2)}',
                                                   style: const TextStyle(
                                                     fontSize: 15,
                                                     fontWeight: FontWeight.w900,
@@ -834,7 +834,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       {'code': 'FIRSTBABY', 'desc': '15% off your first order'},
                       {
                         'code': 'BABYSAVE10',
-                        'desc': '\$10 off orders over \$30',
+                        'desc': '${shop.currencySymbol}10 off orders over ${shop.currencySymbol}30',
                       },
                       {'code': 'NEWPARENT', 'desc': '20% off sitewide'},
                     ].map(
@@ -975,7 +975,53 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 130)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 40, bottom: 130, left: 24, right: 24),
+              child: Column(
+                children: [
+                  const Text(
+                    'We support 24/7 with',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontFamily: 'Outfit',
+                      color: Colors.black45,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'no-reply@theali.app\n+1 (234) 567-890',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Outfit',
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ContactUsSubScreen()),
+                      );
+                    },
+                    child: const Text(
+                      'or click on support ticket',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'Outfit',
+                        color: Color(0xFFFF9EAA),
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Color(0xFFFF9EAA),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

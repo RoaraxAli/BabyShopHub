@@ -2,7 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../models/order_model.dart';
+import '../services/shop_provider.dart';
+import '../services/auth_provider.dart';
 import 'order_tracking_screen.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
@@ -331,7 +334,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       ),
                     ),
                     Text(
-                      '\$${item.totalPrice.toStringAsFixed(2)}',
+                      '${Provider.of<ShopProvider>(context, listen: false).currencySymbol}${item.totalPrice.toStringAsFixed(2)}',
                       style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.6)),
                     ),
                   ],
@@ -353,7 +356,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text(
-                      'Voucher: ${order.promoCode} (-\$${order.discount.toStringAsFixed(2)})',
+                      'Voucher: ${order.promoCode} (-${Provider.of<ShopProvider>(context, listen: false).currencySymbol}${order.discount.toStringAsFixed(2)})',
                       style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -370,7 +373,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   ),
                   const Spacer(),
                   Text(
-                    'Total: \$${order.total.toStringAsFixed(2)}',
+                    'Total: ${Provider.of<ShopProvider>(context, listen: false).currencySymbol}${order.total.toStringAsFixed(2)}',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
                   ),
                 ],

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../services/auth_provider.dart';
 import '../home_screen.dart';
 import '../admin_panel.dart';
+import '../delivery_panel.dart';
 
 class OtpScreen extends StatefulWidget {
   final bool isMfa;
@@ -102,11 +103,13 @@ class _OtpScreenState extends State<OtpScreen> {
       if (widget.isRecovery) {
         Navigator.of(context).pop(true); // Return true to indicate successful verification
       } else {
-        final isAdmin = auth.currentUser?.role == 'admin';
+        final role = auth.currentUser?.role ?? 'user';
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (context) => isAdmin ? const AdminPanel() : const HomeScreen(),
-          ),
+          MaterialPageRoute(builder: (context) {
+            if (role == 'admin') return const AdminPanel();
+            if (role == 'delivery') return const DeliveryPanel();
+            return const HomeScreen();
+          }),
           (route) => false,
         );
       }

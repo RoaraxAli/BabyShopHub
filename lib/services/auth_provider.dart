@@ -7,7 +7,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:otp/otp.dart';
 import '../models/user.dart';
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server.dart';
 
 class AuthProvider extends ChangeNotifier {
   UserProfile? _currentUser;
@@ -175,6 +178,9 @@ class AuthProvider extends ChangeNotifier {
       ''';
     } else if (type == 'CHECKOUT_SUCCESS') {
       subject = 'Order Confirmed - BabyShopHub';
+      final prefs = await SharedPreferences.getInstance();
+      final currencySymbol = prefs.getString('currency_symbol') ?? '\$';
+
       final total = (data['total'] ?? 0.0) as double;
       final address = data['address'] ?? 'Simulated Delivery Address';
       String itemsRows = '';
@@ -186,7 +192,7 @@ class AuthProvider extends ChangeNotifier {
           itemsRows += '''
             <tr>
               <td style="padding: 8px; border-bottom: 1px solid #eee;">$name (x$qty)</td>
-              <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">\$${(price * qty).toStringAsFixed(2)}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$currencySymbol${(price * qty).toStringAsFixed(2)}</td>
             </tr>
           ''';
         }
@@ -208,7 +214,7 @@ class AuthProvider extends ChangeNotifier {
             <tfoot>
               <tr>
                 <td style="padding: 8px; font-weight: bold;">Grand Total:</td>
-                <td style="padding: 8px; font-weight: bold; text-align: right; color: #FF9EAA;">\$${total.toStringAsFixed(2)}</td>
+                <td style="padding: 8px; font-weight: bold; text-align: right; color: #FF9EAA;">$currencySymbol${total.toStringAsFixed(2)}</td>
               </tr>
             </tfoot>
           </table>
@@ -235,23 +241,30 @@ class AuthProvider extends ChangeNotifier {
     }
     debugPrint('========================================================================\n');
 
-    // Query your secure private SMTP relay hosted on Render (completely free, no cards needed)
-    try {
-      final url = Uri.parse('https://babyshophubrender.onrender.com/send-email');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'to': email,
-          'subject': subject,
-          'html': htmlContent,
-        }),
-      ).timeout(const Duration(seconds: 10));
+    // Direct Zoho SMTP Setup
+    final String username = 'no-reply@theali.app';
+    final String password = 'YOUR_ZOHO_APP_PASSWORD_HERE'; // Replace with actual app password
+    final smtpServer = SmtpServer('smtp.zoho.com',
+        port: 465,
+        ssl: true,
+        username: username,
+        password: password);
 
-      debugPrint('SMTP Relay REST Response Status: ${response.statusCode}');
-      debugPrint('SMTP Relay REST Response Body: ${response.body}');
-    } catch (e) {
-      debugPrint('SMTP Relay query skipped/failed (Ensure your Render web service is active): $e');
+    final message = Message()
+      ..from = Address(username, 'BabyShopHub')
+      ..recipients.add(email)
+      ..subject = subject
+      ..html = htmlContent;
+
+    try {
+      final sendReport = await send(message, smtpServer);
+      debugPrint('Message sent: ' + sendReport.toString());
+    } on MailerException catch (e) {
+      debugPrint('Message not sent. \n' + e.toString());
+      for (var p in e.problems) {
+        debugPrint('Problem: ${p.code}: ${p.msg}');
+      }
+      throw Exception('Failed to send email: ${e.message}');
     }
   }
 
@@ -265,15 +278,18 @@ class AuthProvider extends ChangeNotifier {
   bool verifyTotpCode(String secret, String code) {
     if (code.length != 6) return false;
     
-    // Calculate current time step (30-second slots)
-    final timeStep = DateTime.now().millisecondsSinceEpoch ~/ 30000;
+    final now = DateTime.now().millisecondsSinceEpoch;
     
     // Check current, previous, and next time steps to gracefully handle mobile clock drift!
     for (int i = -1; i <= 1; i++) {
-      final slot = timeStep + i;
-      final expectedCode = ((secret.hashCode ^ slot).abs() % 900000) + 100000;
-      if (expectedCode.toString() == code) {
-        return true;
+      final timeToVerify = now + (i * 30000);
+      try {
+        final expectedCode = OTP.generateTOTPCodeString(secret, timeToVerify, algorithm: Algorithm.SHA1, isGoogle: true);
+        if (expectedCode == code) {
+          return true;
+        }
+      } catch (e) {
+        debugPrint('TOTP Error: $e');
       }
     }
     return false;

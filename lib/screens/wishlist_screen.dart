@@ -208,7 +208,7 @@ class WishlistScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '\$${product.price.toStringAsFixed(2)}',
+                        '${Provider.of<ShopProvider>(context, listen: false).currencySymbol}${product.price.toStringAsFixed(2)}',
                         style: TextStyle(
                           color: theme.colorScheme.primary,
                           fontWeight: FontWeight.w900,

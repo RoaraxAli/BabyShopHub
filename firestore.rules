@@ -10,7 +10,7 @@ service cloud.firestore {
     // User profiles rules
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated();
 
       // User addresses subcollection
       match /addresses/{addressId} {

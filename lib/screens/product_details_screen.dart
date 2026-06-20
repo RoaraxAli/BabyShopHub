@@ -631,9 +631,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                       children: [
                                         const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
                                         const SizedBox(width: 4),
-                                        const Text(
-                                          '4.9 (Store Rating)',
-                                          style: TextStyle(color: Colors.black54, fontSize: 12, fontFamily: 'Outfit'),
+                                        Text(
+                                          '${(shop.products.fold(0.0, (sum, p) => sum + p.rating) / (shop.products.isEmpty ? 1 : shop.products.length)).toStringAsFixed(1)} (Store Rating)',
+                                          style: const TextStyle(color: Colors.black54, fontSize: 12, fontFamily: 'Outfit'),
                                         ),
                                       ],
                                     ),
@@ -940,7 +940,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           style: TextStyle(fontSize: 12, color: Colors.black38),
                         ),
                         Text(
-                          '\$${updatedProduct.price.toStringAsFixed(2)}',
+                          '${Provider.of<ShopProvider>(context, listen: false).currencySymbol}${updatedProduct.price.toStringAsFixed(2)}',
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,

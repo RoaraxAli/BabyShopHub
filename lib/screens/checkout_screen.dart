@@ -215,7 +215,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       ? '15% discount successfully subtracted.'
                                       : shop.appliedPromoCode == 'NEWPARENT'
                                           ? '20% discount successfully subtracted.'
-                                          : 'Flat \$10.00 discount successfully subtracted.',
+                                          : 'Flat ${shop.currencySymbol}10.00 discount successfully subtracted.',
                                   style: TextStyle(
                                     color: Colors.green.shade700,
                                     fontSize: 12,
@@ -305,7 +305,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text('Cart Subtotal:', style: TextStyle(fontSize: 14)),
-                              Text('\$${shop.cartSubtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text('${shop.currencySymbol}${shop.cartSubtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                             ],
                           ),
                           if (shop.promoDiscount > 0) ...[
@@ -314,7 +314,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text('Discount (${shop.appliedPromoCode}):', style: const TextStyle(fontSize: 14, color: Colors.green)),
-                                Text('-\$${shop.promoDiscount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                                Text('-${shop.currencySymbol}${shop.promoDiscount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
                               ],
                             ),
                           ],
@@ -335,7 +335,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                '\$${shop.cartTotal.toStringAsFixed(2)}',
+                                '${shop.currencySymbol}${shop.cartTotal.toStringAsFixed(2)}',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
