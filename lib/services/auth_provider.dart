@@ -1,16 +1,12 @@
 import 'dart:math';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:otp/otp.dart';
 import '../models/user.dart';
-import 'package:mailer/mailer.dart';
-import 'package:mailer/smtp_server.dart';
 
 class AuthProvider extends ChangeNotifier {
   UserProfile? _currentUser;
@@ -114,127 +110,10 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required Map<String, dynamic> data,
   }) async {
-    final String subject;
-    final String htmlContent;
-
-    if (type == 'REGISTRATION_OTP') {
-      final otp = data['otp'] ?? '';
-      subject = 'Verify Your Email - BabyShopHub OTP';
-      htmlContent = '''
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-          <h2 style="color: #FF9EAA; text-align: center;">Verify Your Email Address</h2>
-          <p>Hello,</p>
-          <p>Thank you for registering at BabyShopHub. Please use the following One-Time Password (OTP) to verify your email address and complete registration:</p>
-          <div style="background-color: #f7f7f7; padding: 16px; border-radius: 8px; margin: 20px 0; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #FF9EAA;">
-            $otp
-          </div>
-          <p>This code will expire shortly. If you did not request this, you can ignore this email.</p>
-          <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 20px 0;" />
-          <p style="font-size: 11px; color: #999; text-align: center;">BabyShopHub Security Operations</p>
-        </div>
-      ''';
-    } else if (type == 'PASSWORD_RESET_OTP') {
-      final otp = data['otp'] ?? '';
-      subject = 'Reset Your Password - BabyShopHub OTP';
-      htmlContent = '''
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-          <h2 style="color: #FF9EAA; text-align: center;">Reset Your Password</h2>
-          <p>Hello,</p>
-          <p>We received a request to reset your password. Use the following One-Time Password (OTP) to proceed:</p>
-          <div style="background-color: #f7f7f7; padding: 16px; border-radius: 8px; margin: 20px 0; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #FF9EAA;">
-            $otp
-          </div>
-          <p>If you did not request a password reset, please secure your account immediately.</p>
-          <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 20px 0;" />
-          <p style="font-size: 11px; color: #999; text-align: center;">BabyShopHub Security Operations</p>
-        </div>
-      ''';
-    } else if (type == 'WELCOME') {
-      final name = data['name'] ?? 'Parent';
-      subject = 'Welcome to BabyShopHub! 👶';
-      htmlContent = '''
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-          <h1 style="color: #FF9EAA; text-align: center;">Welcome to BabyShopHub! 👶</h1>
-          <p>Dear <strong>$name</strong>,</p>
-          <p>Thank you so much for joining our family. We are thrilled to help you on your parenting journey with premium products designed for care, comfort, and joy.</p>
-          <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 20px 0;" />
-          <p style="font-size: 11px; color: #999; text-align: center;">BabyShopHub Family</p>
-        </div>
-      ''';
-    } else if (type == 'LOGIN_NOTIFICATION') {
-      final time = data['time'] ?? '';
-      subject = '⚠️ Security Alert: Login Notification';
-      htmlContent = '''
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #FFCDD2; border-radius: 12px;">
-          <h2 style="color: #D32F2F; text-align: center;">⚠️ Security Alert: New Login</h2>
-          <p>Hello,</p>
-          <p>We detected a new login action on your BabyShopHub account.</p>
-          <div style="background-color: #FFEBEE; border-left: 4px solid #D32F2F; padding: 12px; border-radius: 4px; margin: 20px 0;">
-            <p style="margin: 0; font-size: 13px;"><strong>Time:</strong> $time</p>
-          </div>
-          <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 20px 0;" />
-          <p style="font-size: 11px; color: #999; text-align: center;">BabyShopHub Security Operations</p>
-        </div>
-      ''';
-    } else if (type == 'CHECKOUT_SUCCESS') {
-      subject = 'Order Confirmed - BabyShopHub';
-      final prefs = await SharedPreferences.getInstance();
-      final rawCurrency = prefs.getString('currency_symbol') ?? '\$';
-      final currencySymbol = rawCurrency.trim().toUpperCase() == 'PKR' ? 'Rs ' : rawCurrency;
-
-      final total = (data['total'] ?? 0.0) as double;
-      final address = data['address'] ?? 'Simulated Delivery Address';
-      String itemsRows = '';
-      if (data['items'] != null && data['items'] is List) {
-        for (var item in data['items']) {
-          final name = item['name'] ?? '';
-          final qty = item['quantity'] ?? 1;
-          final price = (item['price'] ?? 0.0) as double;
-          itemsRows += '''
-            <tr>
-              <td style="padding: 8px; border-bottom: 1px solid #eee;">$name (x$qty)</td>
-              <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$currencySymbol${(price * qty).toStringAsFixed(2)}</td>
-            </tr>
-          ''';
-        }
-      }
-      htmlContent = '''
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-          <h2 style="color: #FF9EAA; text-align: center;">Your Order is Confirmed</h2>
-          <p>Thank you for your purchase. We are preparing your baby products with love and care.</p>
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <thead>
-              <tr style="background-color: #f7f7f7;">
-                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Product Item</th>
-                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #ddd;">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              $itemsRows
-            </tbody>
-            <tfoot>
-              <tr>
-                <td style="padding: 8px; font-weight: bold;">Grand Total:</td>
-                <td style="padding: 8px; font-weight: bold; text-align: right; color: #FF9EAA;">$currencySymbol${total.toStringAsFixed(2)}</td>
-              </tr>
-            </tfoot>
-          </table>
-          <div style="background-color: #f9f9f9; padding: 12px; border-radius: 8px; margin-top: 16px;">
-            <p style="margin: 0; font-size: 13px;"><strong>Delivery Shipping Address:</strong><br/>$address</p>
-          </div>
-          <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 20px 0;" />
-          <p style="font-size: 11px; color: #999; text-align: center;">BabyShopHub Logistics Division</p>
-        </div>
-      ''';
-    } else {
-      subject = 'Notification from BabyShopHub';
-      htmlContent = '<p>Notification from BabyShopHub</p>';
-    }
-
-    // Dev print fallback for instant OTP capture during development
+    // Print payload locally to logs so it's always accessible instantly in debug console
     debugPrint('\n========================================================================');
     debugPrint('   [UNIFIED SMTP RELAY] - EMAIL ACTION DISPATCHED');
-    debugPrint('   To: $email | Subject: $subject');
+    debugPrint('   To: $email | Subject Type: $type');
     if (data.containsKey('otp')) {
       debugPrint('   👉 OTP CODE IS: ${data['otp']} 👈');
     } else {
@@ -242,40 +121,17 @@ class AuthProvider extends ChangeNotifier {
     }
     debugPrint('========================================================================\n');
 
-    // Direct Zoho SMTP Setup
-    if (kIsWeb) {
-      debugPrint('Skipping real SMTP email send on Web platform (RawSocket unsupported).');
-      return;
-    }
-    final String username = 'no-reply@theali.app';
-    final String password = 'YOUR_ZOHO_APP_PASSWORD_HERE'; // Replace with actual app password
-    
-    if (password == 'YOUR_ZOHO_APP_PASSWORD_HERE') {
-      debugPrint('Skipping real SMTP email send because Zoho password is not configured.');
-      return;
-    }
-
-    final smtpServer = SmtpServer('smtp.zoho.com',
-        port: 465,
-        ssl: true,
-        username: username,
-        password: password);
-
-    final message = Message()
-      ..from = Address(username, 'BabyShopHub')
-      ..recipients.add(email)
-      ..subject = subject
-      ..html = htmlContent;
-
+    // Trigger secure Zoho dispatching by writing a document to /mail_triggers in Firestore
     try {
-      final sendReport = await send(message, smtpServer);
-      debugPrint('Message sent: ' + sendReport.toString());
-    } on MailerException catch (e) {
-      debugPrint('Message not sent. \n' + e.toString());
-      for (var p in e.problems) {
-        debugPrint('Problem: ${p.code}: ${p.msg}');
-      }
-      throw Exception('Failed to send email: ${e.message}');
+      await FirebaseFirestore.instance.collection('mail_triggers').add({
+        'to': email,
+        'type': type,
+        'data': data,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      debugPrint('[UNIFIED SMTP RELAY] Successfully created mail_triggers doc in Firestore for $email ($type).');
+    } catch (e) {
+      debugPrint('[UNIFIED SMTP RELAY ERROR] Failed to create mail_triggers doc in Firestore: $e');
     }
   }
 
