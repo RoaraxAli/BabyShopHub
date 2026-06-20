@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
+          title: Row(
             children: [
               Icon(Icons.local_shipping_rounded, color: Theme.of(context).colorScheme.primary),
               SizedBox(width: 8),
@@ -102,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Text(
                   otp,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 8,
@@ -288,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
               right: 8,
               child: Container(
                 padding: const EdgeInsets.all(3),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
@@ -359,7 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ).withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
@@ -367,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     size: 13,
                                     color: Theme.of(context).colorScheme.primary,
                                   ),
-                                  SizedBox(width: 4),
+                                  const SizedBox(width: 4),
                                   Text(
                                     'Admin Panel',
                                     style: TextStyle(
@@ -447,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     (user?.displayName ?? 'P')
                                         .substring(0, 1)
                                         .toUpperCase(),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Theme.of(context).colorScheme.primary,
                                       fontFamily: 'Outfit',
@@ -471,8 +471,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Container(
                 height: 230,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Theme.of(context).colorScheme.primary, Color(0xFFFFB347)],
+                  gradient: LinearGradient(
+                    colors: [Theme.of(context).colorScheme.primary, const Color(0xFFFFB347)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -591,7 +591,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(24),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Shop Now →',
                                   style: TextStyle(
                                     color: Theme.of(context).colorScheme.primary,
@@ -633,8 +633,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Spacer(),
                       GestureDetector(
                         onTap: () => setState(() => _bottomNavIndex = 1),
-                        child: const Padding(
-                          padding: EdgeInsets.only(right: 24),
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 24),
                           child: Text(
                             'See all',
                             style: TextStyle(
@@ -746,8 +746,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Spacer(),
                       GestureDetector(
                         onTap: () => setState(() => _bottomNavIndex = 1),
-                        child: const Padding(
-                          padding: EdgeInsets.only(right: 24),
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 24),
                           child: Text(
                             'View all',
                             style: TextStyle(
@@ -765,7 +765,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   SizedBox(
                     height: 310,
                     child: newArrivals.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: CircularProgressIndicator(
                               color: Theme.of(context).colorScheme.primary,
                             ),
@@ -816,7 +816,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 color: const Color(
                                                   0xFFFF9EAA,
                                                 ).withOpacity(0.08),
-                                                child: const Center(
+                                                child: Center(
                                                   child: Icon(
                                                     Icons.child_care_rounded,
                                                     size: 48,
@@ -855,7 +855,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               children: [
                                                 Text(
                                                   '${shop.currencySymbol}${p.price.toStringAsFixed(2)}',
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontSize: 15,
                                                     fontWeight: FontWeight.w900,
                                                     color: Theme.of(context).colorScheme.primary,
@@ -909,7 +909,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
                         Icon(
                           Icons.local_offer_rounded,
@@ -965,7 +965,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               child: Text(
                                 promo['code']!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
                                   color: Theme.of(context).colorScheme.primary,
@@ -1043,7 +1043,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.white.withOpacity(0.9),
                         borderRadius: BorderRadius.circular(18),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.auto_awesome_rounded,
                         color: Theme.of(context).colorScheme.primary,
                         size: 28,
@@ -1113,7 +1113,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         MaterialPageRoute(builder: (_) => const ContactUsSubScreen()),
                       );
                     },
-                    child: const Text(
+                    child: Text(
                       'or click on support ticket',
                       style: TextStyle(
                         fontSize: 13,
@@ -1301,7 +1301,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             .substring(0, 1)
                                             .toUpperCase() ??
                                         'P',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Theme.of(context).colorScheme.primary,
                                     ),

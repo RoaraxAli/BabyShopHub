@@ -140,8 +140,8 @@ class _DeliveryPanelState extends State<DeliveryPanel> {
               },
             )
           ],
-          bottom: const TabBar(
-            tabs: [
+          bottom: TabBar(
+            tabs: const [
               Tab(text: 'Available Orders'),
               Tab(text: 'My Deliveries'),
             ],

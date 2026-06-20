@@ -80,7 +80,7 @@ class _AdminPanelState extends State<AdminPanel> {
                       const SizedBox(width: 6),
                       Text(
                         item.label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.primary,
@@ -178,11 +178,11 @@ class _AdminPanelState extends State<AdminPanel> {
                             color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.shield_rounded, size: 14, color: Theme.of(context).colorScheme.primary),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text('Admin', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
                             ],
                           ),
@@ -223,8 +223,8 @@ class _AdminPanelState extends State<AdminPanel> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Theme.of(context).colorScheme.primary, Color(0xFFFFB347)],
+                    gradient: LinearGradient(
+                      colors: [Theme.of(context).colorScheme.primary, const Color(0xFFFFB347)],
                     ),
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -270,10 +270,10 @@ class _AdminPanelState extends State<AdminPanel> {
               ),
               child: Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 16,
                     backgroundColor: Theme.of(context).colorScheme.primary,
-                    child: Icon(Icons.admin_panel_settings_rounded, size: 16, color: Colors.white),
+                    child: const Icon(Icons.admin_panel_settings_rounded, size: 16, color: Colors.white),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -1394,9 +1394,9 @@ class _OrdersSectionState extends State<_OrdersSection> {
                             : 'No Min';
                         
                         return ListTile(
-                          leading: const CircleAvatar(
+                          leading: CircleAvatar(
                             backgroundColor: Theme.of(context).colorScheme.primary,
-                            child: Icon(Icons.local_offer_rounded, color: Colors.white, size: 18),
+                            child: const Icon(Icons.local_offer_rounded, color: Colors.white, size: 18),
                           ),
                           title: Text(v.code, style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
                           subtitle: Text('$discountText | $minText', style: const TextStyle(fontFamily: 'Outfit', fontSize: 12)),
@@ -3052,8 +3052,8 @@ class _SettingsSectionState extends State<_SettingsSection> {
       setState(() => _loading = false);
       Provider.of<ShopProvider>(context, listen: false).updateCurrency(_currencySymbolController.text.trim());
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('All Settings saved successfully!'),
+        SnackBar(
+          content: const Text('All Settings saved successfully!'),
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
@@ -3296,7 +3296,7 @@ class _RevenueTrendChart extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
+                child: Text(
                   '+12.4% this week',
                   style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
                 ),
@@ -3309,7 +3309,11 @@ class _RevenueTrendChart extends StatelessWidget {
               builder: (context, constraints) {
                 return CustomPaint(
                   size: Size(constraints.maxWidth, constraints.maxHeight),
-                  painter: _ChartPainter(revenueData: revenueData, labels: labels),
+                  painter: _ChartPainter(
+                    revenueData: revenueData,
+                    labels: labels,
+                    primaryColor: Theme.of(context).colorScheme.primary,
+                  ),
                 );
               },
             ),
@@ -3323,8 +3327,13 @@ class _RevenueTrendChart extends StatelessWidget {
 class _ChartPainter extends CustomPainter {
   final List<double> revenueData;
   final List<String> labels;
+  final Color primaryColor;
 
-  _ChartPainter({required this.revenueData, required this.labels});
+  _ChartPainter({
+    required this.revenueData,
+    required this.labels,
+    required this.primaryColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -3396,8 +3405,8 @@ class _ChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Theme.of(context).colorScheme.primary.withOpacity(0.35),
-          Theme.of(context).colorScheme.primary.withOpacity(0.01),
+          primaryColor.withOpacity(0.35),
+          primaryColor.withOpacity(0.01),
         ],
       ).createShader(Rect.fromLTRB(paddingLeft, 0, size.width, chartHeight));
     canvas.drawPath(fillPath, fillPaint);
@@ -3421,7 +3430,7 @@ class _ChartPainter extends CustomPainter {
     }
 
     final Paint linePaint = Paint()
-      ..color = Theme.of(context).colorScheme.primary
+      ..color = primaryColor
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -3432,7 +3441,7 @@ class _ChartPainter extends CustomPainter {
       ..color = Colors.white
       ..style = PaintingStyle.fill;
     final Paint pointPaint = Paint()
-      ..color = Theme.of(context).colorScheme.primary
+      ..color = primaryColor
       ..style = PaintingStyle.fill;
 
     for (int i = 0; i < points.length; i++) {
