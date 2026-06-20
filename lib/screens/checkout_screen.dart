@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import '../services/shop_provider.dart';
 import '../services/auth_provider.dart';
 import '../widgets/animated_loader.dart';
@@ -103,26 +105,208 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
 
     final userEmail = auth.currentUser?.email ?? 'guest.parent@gmail.com';
-    // Bypassing Stripe to directly process the checkout locally in Firestore
-    final errorMsg = await shop.processCheckout(userEmail, _addressController.text.trim());
+    
+    String paymentStatus = 'waiting'; // 'waiting', 'success', 'failed'
+    StateSetter? dialogSetState;
+    String? currentOrderId;
+    bool hasCancelled = false;
+
+    // Show Awaiting Payment Dialog modal
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            dialogSetState = setState;
+            
+            Widget content;
+            if (paymentStatus == 'success') {
+              content = const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.green, size: 72),
+                  SizedBox(height: 20),
+                  Text(
+                    'Payment Completed!',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Your order is being processed.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                ],
+              );
+            } else if (paymentStatus == 'failed') {
+              content = const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.cancel_rounded, color: Colors.redAccent, size: 72),
+                  SizedBox(height: 20),
+                  Text(
+                    'Payment Cancelled',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'The transaction was not completed.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                ],
+              );
+            } else {
+              content = const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 20),
+                  Text(
+                    'Awaiting Stripe Payment...',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Please complete the payment in the opened tab.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                ],
+              );
+            }
+
+            return PopScope(
+              canPop: false,
+              child: AlertDialog(
+                content: content,
+                actions: [
+                  if (paymentStatus == 'waiting')
+                    TextButton(
+                      onPressed: () async {
+                        hasCancelled = true;
+                        if (currentOrderId == null) {
+                          Navigator.of(dialogCtx).pop();
+                          return;
+                        }
+                        try {
+                          await FirebaseFirestore.instance.collection('orders').doc(currentOrderId).update({
+                            'status': 'Cancelled',
+                            'statusHistory': FieldValue.arrayUnion([
+                              {
+                                'status': 'Cancelled',
+                                'timestamp': Timestamp.now(),
+                                'note': 'Payment cancelled by user from app checkout dialog',
+                              }
+                            ]),
+                          });
+                        } catch (e) {
+                          debugPrint('Error cancelling order: $e');
+                          if (context.mounted) {
+                            Navigator.of(dialogCtx).pop();
+                          }
+                        }
+                      },
+                      child: const Text('Cancel Payment', style: TextStyle(color: Colors.redAccent)),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    // Using Stripe for checkout
+    final result = await shop.initiateStripeCheckout(userEmail, _addressController.text.trim());
+
+    if (hasCancelled) return;
 
     if (!mounted) return;
 
-    if (errorMsg == null) {
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Order placed successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else {
+    if (result.error != null) {
+      Navigator.of(context).pop(); // Close awaiting dialog
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Checkout failed: $errorMsg'),
+          content: Text('Checkout failed: ${result.error}'),
           backgroundColor: Colors.redAccent,
         ),
       );
+      return;
+    }
+
+    final orderId = result.orderId;
+    if (orderId != null) {
+      currentOrderId = orderId;
+      if (dialogSetState != null) {
+        dialogSetState!(() {});
+      }
+      debugPrint('[CHECKOUT] Listening to order status updates for ID: $orderId');
+      StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? subscription;
+      
+      subscription = FirebaseFirestore.instance
+          .collection('orders')
+          .doc(orderId)
+          .snapshots()
+          .listen((snapshot) async {
+            if (!snapshot.exists) {
+              debugPrint('[CHECKOUT] Order document does not exist: $orderId');
+              return;
+            }
+            final data = snapshot.data();
+            if (data != null) {
+              final status = data['status'] as String?;
+              debugPrint('[CHECKOUT] Real-time status update: $status');
+              if (status == 'Pending') {
+                subscription?.cancel();
+                // Clear cart locally in the main window
+                shop.clearCart();
+                
+                if (dialogSetState != null) {
+                  dialogSetState!(() {
+                    paymentStatus = 'success';
+                  });
+                }
+                
+                // Show success tick for 2 seconds
+                await Future.delayed(const Duration(seconds: 2));
+                
+                if (mounted) {
+                  debugPrint('[CHECKOUT] Status is Pending. Popping routes...');
+                  Navigator.of(context).pop(); // Close dialog
+                  Navigator.of(context).pop(); // Close checkout screen
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Order placed and payment completed successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } else if (status == 'Cancelled') {
+                subscription?.cancel();
+                if (dialogSetState != null) {
+                  dialogSetState!(() {
+                    paymentStatus = 'failed';
+                  });
+                }
+                
+                // Show failed cross for 2 seconds
+                await Future.delayed(const Duration(seconds: 2));
+
+                if (mounted) {
+                  debugPrint('[CHECKOUT] Status is Cancelled. Popping dialog...');
+                  Navigator.of(context).pop(); // Close dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Payment cancelled or closed.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+          });
     }
   }
 
@@ -155,9 +339,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Shipping Details',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      const Expanded(
+                        child: Text(
+                          'Shipping Details',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       if (auth.currentUser?.addresses.isNotEmpty ?? false)
                         TextButton.icon(
@@ -301,10 +488,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          Row(
+                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Cart Subtotal:', style: TextStyle(fontSize: 14)),
+                              const Expanded(child: Text('Cart Subtotal:', style: TextStyle(fontSize: 14))),
                               Text('${shop.currencySymbol}${shop.cartSubtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                             ],
                           ),
@@ -313,7 +500,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Discount (${shop.appliedPromoCode}):', style: const TextStyle(fontSize: 14, color: Colors.green)),
+                                Expanded(child: Text('Discount (${shop.appliedPromoCode}):', style: const TextStyle(fontSize: 14, color: Colors.green))),
                                 Text('-${shop.currencySymbol}${shop.promoDiscount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
                               ],
                             ),
@@ -322,7 +509,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: const [
-                              Text('Delivery Shipping:', style: TextStyle(fontSize: 14)),
+                              Expanded(child: Text('Delivery Shipping:', style: TextStyle(fontSize: 14))),
                               Text('FREE', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
                             ],
                           ),
@@ -330,9 +517,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Grand Total:',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                              const Expanded(
+                                child: Text(
+                                  'Grand Total:',
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                                ),
                               ),
                               Text(
                                 '${shop.currencySymbol}${shop.cartTotal.toStringAsFixed(2)}',

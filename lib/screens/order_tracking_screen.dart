@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/order_model.dart';
+import '../models/product.dart';
+import 'product_details_screen.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final OrderModel order;
@@ -262,50 +264,102 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       ],
                     ),
                     const Divider(height: 20),
-                    ...order.items.map((item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Row(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              item.imageUrl,
-                              width: 44,
-                              height: 44,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                width: 44, height: 44,
-                                color: Colors.grey.shade200,
-                                child: const Icon(Icons.child_care_rounded, size: 22),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                    ...order.items.map((item) {
+                      final shop = Provider.of<ShopProvider>(context, listen: false);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                Text(
-                                  item.name,
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    item.imageUrl,
+                                    width: 44,
+                                    height: 44,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      width: 44, height: 44,
+                                      color: Colors.grey.shade200,
+                                      child: const Icon(Icons.child_care_rounded, size: 22),
+                                    ),
+                                  ),
                                 ),
-                                const SizedBox(height: 2),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.name,
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${shop.currencySymbol}${item.price.toStringAsFixed(2)} x ${item.quantity}',
+                                        style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                                 Text(
-                                  '${Provider.of<ShopProvider>(context, listen: false).currencySymbol}${item.price.toStringAsFixed(2)} x ${item.quantity}',
-                                  style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                                  '${shop.currencySymbol}${item.totalPrice.toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
-                          ),
-                          Text(
-                            '${Provider.of<ShopProvider>(context, listen: false).currencySymbol}${item.totalPrice.toStringAsFixed(2)}',
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    )),
+                            if (order.currentStatus == 'Delivered') ...[
+                              Padding(
+                                padding: const EdgeInsets.only(left: 56.0, top: 4.0),
+                                child: TextButton.icon(
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(0, 0),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    foregroundColor: theme.colorScheme.primary,
+                                  ),
+                                  onPressed: () {
+                                    final fullProduct = shop.products.firstWhere(
+                                      (p) => p.id == item.id,
+                                      orElse: () => Product(
+                                        id: item.id,
+                                        name: item.name,
+                                        category: '',
+                                        description: '',
+                                        price: item.price,
+                                        imageUrl: item.imageUrl,
+                                        rating: 5.0,
+                                        reviewsCount: 0,
+                                        stock: 0,
+                                        reviews: [],
+                                      ),
+                                    );
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => ProductDetailsScreen(
+                                          product: fullProduct,
+                                          initialTab: 'Review',
+                                          showReviewForm: true,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.rate_review_outlined, size: 14),
+                                  label: const Text(
+                                    'Write a Review',
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }),
                     const Divider(height: 20),
                     if (order.promoCode != null && order.discount > 0) ...[
                       Row(

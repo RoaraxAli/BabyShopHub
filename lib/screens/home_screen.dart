@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/shop_provider.dart';
 import '../services/auth_provider.dart';
 import '../widgets/product_card.dart';
@@ -20,6 +22,111 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _bottomNavIndex = 0;
   final TextEditingController _searchController = TextEditingController();
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _orderDeliverySubscription;
+  final Set<String> _notifiedOrderOtps = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _listenToOrderDeliveries();
+    });
+  }
+
+  @override
+  void dispose() {
+    _orderDeliverySubscription?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _listenToOrderDeliveries() {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final userId = auth.currentUser?.uid;
+    if (userId == null || userId.isEmpty) return;
+
+    _orderDeliverySubscription = FirebaseFirestore.instance
+        .collection('orders')
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .listen((snapshot) {
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final orderId = doc.id;
+        final status = data['status'] as String? ?? '';
+        final otp = data['deliveryOTP'] as String?;
+
+        if (status == 'Out For Delivery' && otp != null && otp.isNotEmpty) {
+          final uniqueKey = '${orderId}_$otp';
+          if (!_notifiedOrderOtps.contains(uniqueKey)) {
+            _notifiedOrderOtps.add(uniqueKey);
+            _showDeliveryOtpPopup(orderId, otp);
+          }
+        }
+      }
+    });
+  }
+
+  void _showDeliveryOtpPopup(String orderId, String otp) {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.local_shipping_rounded, color: Color(0xFFFF9EAA)),
+              SizedBox(width: 8),
+              Text(
+                'Order Out For Delivery!',
+                style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Your order is on the way! Please show this Delivery Verification OTP to the driver when they arrive:',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9EAA).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFF9EAA).withOpacity(0.3)),
+                ),
+                child: Text(
+                  otp,
+                  style: const TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 8,
+                    color: Color(0xFFFF9EAA),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Order ID: #${orderId.substring(0, 8).toUpperCase()}',
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK', style: TextStyle(color: Color(0xFFFF9EAA), fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   // Categories are loaded dynamically from ShopProvider
 

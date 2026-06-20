@@ -108,35 +108,7 @@ class ProfileScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Dynamic Notification Badge Bell
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.notifications_outlined, size: 28),
-                        onPressed: () => _showNotificationsBottomSheet(context, auth),
-                        tooltip: 'Notifications',
-                      ),
-                      if (user.notifications.where((n) => !n.read).isNotEmpty)
-                        Positioned(
-                          right: 6,
-                          top: 6,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.redAccent,
-                              shape: BoxShape.circle,
-                            ),
-                            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                            child: Text(
-                              '${user.notifications.where((n) => !n.read).length}',
-                              style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        )
-                    ],
-                  ),
+                  // Notifications button removed
                 ],
               ),
             ),

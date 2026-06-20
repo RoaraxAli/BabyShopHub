@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
@@ -32,7 +33,12 @@ class ShopProvider extends ChangeNotifier {
   double get promoDiscount => _promoDiscount;
   List<CategoryModel> get categories => _categories;
   List<VoucherModel> get vouchers => _vouchers;
-  String get currencySymbol => _currencySymbol;
+  String get currencySymbol {
+    if (_currencySymbol.trim().toUpperCase() == 'PKR') {
+      return 'Rs ';
+    }
+    return _currencySymbol;
+  }
 
   String _searchQuery = '';
   String _selectedCategory = 'All';
@@ -658,17 +664,14 @@ class ShopProvider extends ChangeNotifier {
       htmlContent = '<p>You have a new notification from BabyShopHub.</p>';
     }
 
-    debugPrint('[SHOP SMTP RELAY] Dispatching $type email to $email');
+    debugPrint('[SHOP SMTP RELAY] Dispatching \$type email to \$email');
     try {
-      final url = Uri.parse('https://babyshophubrender.onrender.com/send-email');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'to': email, 'subject': subject, 'html': htmlContent}),
-      ).timeout(const Duration(seconds: 10));
-      debugPrint('[SHOP SMTP RELAY] Response: ${response.statusCode} - ${response.body}');
+      // The Next.js / Render server has been removed per user request.
+      // Emails are now fully bypassed and simply logged.
+      debugPrint('[SHOP SMTP RELAY] Server bypassed. Email content: \$subject');
+      await Future.delayed(const Duration(milliseconds: 200)); // mock delay
     } catch (e) {
-      debugPrint('[SHOP SMTP RELAY] Failed: $e');
+      debugPrint('[SHOP SMTP RELAY] Failed: \$e');
     }
   }
 
@@ -743,8 +746,8 @@ class ShopProvider extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
 
-    // 3. Trigger checkout success receipt email
-    await _triggerZohoEmail(userEmail, 'CHECKOUT_SUCCESS', {
+    // 3. Trigger checkout success receipt email (Fire and forget, don't await)
+    _triggerZohoEmail(userEmail, 'CHECKOUT_SUCCESS', {
       'items': itemsList,
       'total': orderTotal,
       'address': shippingAddress,
@@ -803,88 +806,131 @@ class ShopProvider extends ChangeNotifier {
       }
     }
   }
-
-  // --- Stripe Checkout Redirect Flow ---
-  Future<String?> initiateStripeCheckout(String userEmail, String shippingAddress) async {
+    // --- Stripe Checkout Redirect Flow (100% Flutter) ---
+  Future<StripeCheckoutResult> initiateStripeCheckout(String userEmail, String shippingAddress) async {
     _isLoading = true;
     notifyListeners();
 
-    final user = FirebaseAuth.instance.currentUser;
-    final userId = user?.uid ?? '';
-
-    final itemsList = _cart.map((item) => {
-      'id': item.product.id,
-      'name': item.product.name,
-      'quantity': item.quantity,
-      'price': item.product.price,
-      'total': item.totalPrice,
-      'imageUrl': item.product.imageUrl,
-    }).toList();
-
-    final orderTotal = cartTotal;
-    final promoCode = _appliedPromoCode;
-    final discountVal = _promoDiscount;
-
+    String? createdOrderId;
     try {
-      // 1. Create order in Firestore as Pending
-      final orderRef = await FirebaseFirestore.instance.collection('orders').add({
+      // 1. Direct REST Call to Stripe from Flutter (No NextJS Server)
+      // Note: In production, embedding the secret key in the app is not recommended.
+      const String stripeSecretKey = 'sk_test_51TDq00QA9DSVCRzpjp5sKoBLzLKQlezJBpRwEhYQImkSJ0vTZ8OaWV54PfAmoBKVxKG73TWb4eAd47GFvGvi51Fj00OKlXxo5w'; // User test key
+      
+      // 2. Pre-create the order as "Unpaid" in Firestore to get the document ID
+      final user = FirebaseAuth.instance.currentUser;
+      final userId = user?.uid ?? '';
+      final itemsList = _cart.map((item) => {
+        'id': item.product.id,
+        'name': item.product.name,
+        'quantity': item.quantity,
+        'price': item.product.price,
+        'total': item.totalPrice,
+        'imageUrl': item.product.imageUrl,
+      }).toList();
+
+      final orderDocRef = await FirebaseFirestore.instance.collection('orders').add({
         'email': userEmail,
         'userId': userId,
         'address': shippingAddress,
         'items': itemsList,
-        'total': orderTotal,
-        'promoCode': promoCode,
-        'discount': discountVal,
-        'status': 'Pending',
+        'total': cartTotal,
+        'promoCode': _appliedPromoCode,
+        'discount': _promoDiscount,
+        'status': 'Unpaid',
         'statusHistory': [
           {
-            'status': 'Pending',
+            'status': 'Unpaid',
             'timestamp': Timestamp.now(),
-            'note': 'Stripe checkout initiated',
+            'note': 'Checkout initiated, redirecting to Stripe payment page',
           }
         ],
         'createdAt': FieldValue.serverTimestamp(),
       });
+      createdOrderId = orderDocRef.id;
 
-      // 2. Call Next.js API route to create Checkout Session
+      final baseUri = Uri.base;
+      final bool isWebLocal = kIsWeb && (baseUri.host == 'localhost' || baseUri.host == '127.0.0.1');
+      final String baseUrl = isWebLocal 
+          ? '${baseUri.scheme}://${baseUri.authority}' 
+          : 'https://babyshop-1f281.web.app';
+
+      final Map<String, String> body = {
+        'success_url': '$baseUrl/#/success?orderId=$createdOrderId',
+        'cancel_url': '$baseUrl/#/cancel?orderId=$createdOrderId',
+        'mode': 'payment',
+        'customer_email': userEmail,
+      };
+
+      for (int i = 0; i < _cart.length; i++) {
+        final item = _cart[i];
+        final currencyStr = _currencySymbol.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+        final currency = currencyStr.isEmpty ? 'usd' : currencyStr;
+        
+        body['line_items[$i][price_data][currency]'] = currency;
+        body['line_items[$i][price_data][product_data][name]'] = item.product.name;
+        body['line_items[$i][price_data][unit_amount]'] = (item.product.price * 100).round().toString();
+        body['line_items[$i][quantity]'] = item.quantity.toString();
+      }
+
       final response = await http.post(
-        Uri.parse('http://localhost:3000/api/checkout'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'items': _cart.map((item) => {
-            'product': {
-              'name': item.product.name,
-              'price': item.product.price,
-              'image': item.product.imageUrl ?? '',
-            },
-            'quantity': item.quantity,
-          }).toList(),
-          'userId': userId,
-          'email': userEmail,
-          'address': shippingAddress,
-          'orderId': orderRef.id,
-          'redirectUrl': 'http://localhost:3000',
-        }),
+        Uri.parse('https://api.stripe.com/v1/checkout/sessions'),
+        headers: {
+          'Authorization': 'Bearer $stripeSecretKey',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: body,
       );
 
       if (response.statusCode == 200) {
         final resBody = jsonDecode(response.body);
         final stripeUrl = resBody['url'] as String?;
         if (stripeUrl != null) {
-          clearCart();
           _isLoading = false;
           notifyListeners();
           
           await launchUrl(Uri.parse(stripeUrl), mode: LaunchMode.externalApplication);
-          return null; // success
+          return StripeCheckoutResult(orderId: createdOrderId); // success
         }
       }
-      throw Exception('Failed to generate Stripe Checkout: ${response.body}');
+
+      // If Stripe request fails, mark the created order as Failed/Cancelled
+      await FirebaseFirestore.instance.collection('orders').doc(createdOrderId).update({
+        'status': 'Cancelled',
+        'statusHistory': FieldValue.arrayUnion([
+          {
+            'status': 'Cancelled',
+            'timestamp': Timestamp.now(),
+            'note': 'Stripe session creation failed: ${response.body}',
+          }
+        ]),
+      });
+      throw Exception('Stripe Checkout Failed: ${response.body}');
     } catch (e) {
       debugPrint('[STRIPE CHECKOUT ERROR] $e');
+      if (createdOrderId != null) {
+        try {
+          await FirebaseFirestore.instance.collection('orders').doc(createdOrderId).update({
+            'status': 'Cancelled',
+            'statusHistory': FieldValue.arrayUnion([
+              {
+                'status': 'Cancelled',
+                'timestamp': Timestamp.now(),
+                'note': 'Stripe checkout error: $e',
+              }
+            ]),
+          });
+        } catch (_) {}
+      }
       _isLoading = false;
       notifyListeners();
-      return e.toString();
+      return StripeCheckoutResult(error: e.toString());
     }
   }
+}
+
+class StripeCheckoutResult {
+  final String? orderId;
+  final String? error;
+  StripeCheckoutResult({this.orderId, this.error});
 }

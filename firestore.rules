@@ -50,7 +50,8 @@ service cloud.firestore {
     // Orders checkout details
     match /orders/{orderId} {
       allow create: if isAuthenticated();
-      allow read, write: if isAuthenticated();
+      allow read, update: if true;
+      allow delete: if isAuthenticated();
     }
 
     // Product reviews rules

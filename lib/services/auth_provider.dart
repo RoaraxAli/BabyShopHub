@@ -179,7 +179,8 @@ class AuthProvider extends ChangeNotifier {
     } else if (type == 'CHECKOUT_SUCCESS') {
       subject = 'Order Confirmed - BabyShopHub';
       final prefs = await SharedPreferences.getInstance();
-      final currencySymbol = prefs.getString('currency_symbol') ?? '\$';
+      final rawCurrency = prefs.getString('currency_symbol') ?? '\$';
+      final currencySymbol = rawCurrency.trim().toUpperCase() == 'PKR' ? 'Rs ' : rawCurrency;
 
       final total = (data['total'] ?? 0.0) as double;
       final address = data['address'] ?? 'Simulated Delivery Address';

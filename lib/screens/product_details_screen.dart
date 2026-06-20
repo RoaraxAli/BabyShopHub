@@ -10,10 +10,14 @@ import '../services/auth_provider.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final Product product;
+  final String initialTab;
+  final bool showReviewForm;
 
   const ProductDetailsScreen({
     super.key,
     required this.product,
+    this.initialTab = 'About',
+    this.showReviewForm = false,
   });
 
   @override
@@ -50,6 +54,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedTab = widget.initialTab;
+    _showReviewForm = widget.showReviewForm;
     _checkReviewEligibility();
   }
 
