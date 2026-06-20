@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GroqService {
-  static const String _apiKey =
-      String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
   static const String _baseUrl =
       'https://api.groq.com/openai/v1/chat/completions';
 
@@ -20,10 +19,25 @@ class GroqService {
       "You assist parents with baby product recommendations, safety questions, shipping details, or return policies. "
       "Your tone should be warm, clinical, and reassuring. Keep answers concise and helpful.";
 
+  Future<String> _getApiKey() async {
+    const fromEnv = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
+    if (fromEnv.isNotEmpty) return fromEnv;
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('GROQ_API_KEY') ?? '';
+    } catch (e) {
+      debugPrint('Error reading key from SharedPreferences: $e');
+      return '';
+    }
+  }
+
   /// Sends a list of chat messages to Groq using model fallback logic
   Future<String> getChatResponse(
     List<Map<String, String>> conversationHistory,
   ) async {
+    final apiKey = await _getApiKey();
+
     // Inject system prompt at start
     final messages = [
       {'role': 'system', 'content': _systemPrompt},
@@ -39,7 +53,7 @@ class GroqService {
               Uri.parse(_baseUrl),
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer $_apiKey',
+                'Authorization': 'Bearer $apiKey',
               },
               body: jsonEncode({
                 'model': model,

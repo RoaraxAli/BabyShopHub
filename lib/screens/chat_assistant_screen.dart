@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/groq_service.dart';
 
 class ChatMessage {
@@ -27,6 +28,87 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
   final ScrollController _scrollController = ScrollController();
   final GroqService _groqService = GroqService();
   bool _isTyping = false;
+
+  void _showApiKeyDialog() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentKey = prefs.getString('GROQ_API_KEY') ?? '';
+    final keyController = TextEditingController(text: currentKey);
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.vpn_key_rounded, color: Colors.black87),
+            SizedBox(width: 8),
+            Text('Groq API Key', style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter your Groq API Key to enable the AI Chatbot. You can get one for free at console.groq.com.',
+              style: TextStyle(fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: keyController,
+              decoration: const InputDecoration(
+                labelText: 'API Key',
+                hintText: 'gsk_...',
+                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+              ),
+              obscureText: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          if (currentKey.isNotEmpty)
+            TextButton(
+              onPressed: () async {
+                await prefs.remove('GROQ_API_KEY');
+                if (mounted) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('API Key cleared successfully!'), backgroundColor: Colors.redAccent),
+                  );
+                }
+              },
+              child: const Text('Clear Key', style: TextStyle(color: Colors.redAccent)),
+            ),
+          ElevatedButton(
+            onPressed: () async {
+              final newKey = keyController.text.trim();
+              if (newKey.isNotEmpty) {
+                await prefs.setString('GROQ_API_KEY', newKey);
+                if (mounted) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('API Key saved successfully!'), backgroundColor: Colors.green),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black87,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
+            child: const Text('Save Key'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -85,6 +167,13 @@ class _ChatAssistantScreenState extends State<ChatAssistantScreen> {
         ),
         elevation: 0,
         backgroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.vpn_key_rounded, color: Colors.black87),
+            tooltip: 'Configure Groq API Key',
+            onPressed: _showApiKeyDialog,
+          ),
+        ],
       ),
       body: Column(
         children: [

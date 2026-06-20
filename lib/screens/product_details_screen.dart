@@ -37,16 +37,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   bool _isDescriptionExpanded = false;
   String _selectedTab = 'About'; // 'About', 'Gallery', 'Review'
   final PageController _pageController = PageController();
-  final ScrollController _scrollController = ScrollController();
-  double? _sheetTop;
-  bool _isAdjusting = false;
-  Duration _animationDuration = Duration.zero;
-  bool _wasListScrolled = false;
+  final DraggableScrollableController _draggableController = DraggableScrollableController();
+  double _sheetSize = 0.68;
 
   @override
   void dispose() {
     _pageController.dispose();
-    _scrollController.dispose();
+    _draggableController.dispose();
     _commentController.dispose();
     super.dispose();
   }
@@ -57,6 +54,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     _selectedTab = widget.initialTab;
     _showReviewForm = widget.showReviewForm;
     _checkReviewEligibility();
+    _draggableController.addListener(() {
+      if (mounted) {
+        setState(() {
+          _sheetSize = _draggableController.size;
+        });
+      }
+    });
   }
 
   Future<void> _checkReviewEligibility() async {
@@ -197,9 +201,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     ];
 
     final double screenHeight = MediaQuery.of(context).size.height;
-    final double minTop = screenHeight * 0.30;
-    final double maxTop = screenHeight * 0.68;
-    _sheetTop = (_sheetTop ?? maxTop).clamp(minTop, maxTop);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -214,33 +215,27 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
-                setState(() {
-                  _animationDuration = const Duration(milliseconds: 300);
-                  if (_sheetTop! < (minTop + maxTop) / 2) {
-                    _sheetTop = maxTop;
-                  } else {
-                    _sheetTop = minTop;
-                  }
-                });
+                if (_sheetSize > 0.5) {
+                  _draggableController.animateTo(0.30, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                } else {
+                  _draggableController.animateTo(0.68, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                }
               },
               onVerticalDragUpdate: (details) {
                 final double dy = details.primaryDelta ?? 0.0;
-                setState(() {
-                  _animationDuration = Duration.zero;
-                  _sheetTop = (_sheetTop! + dy).clamp(minTop, maxTop);
-                });
+                final double deltaSize = dy / screenHeight;
+                _draggableController.jumpTo((_draggableController.size - deltaSize).clamp(0.30, 0.95));
               },
               onVerticalDragEnd: (details) {
-                if (_sheetTop! > minTop && _sheetTop! < maxTop) {
-                  final double midPoint = (minTop + maxTop) / 2;
-                  setState(() {
-                    _animationDuration = const Duration(milliseconds: 300);
-                    if (_sheetTop! < midPoint) {
-                      _sheetTop = minTop;
-                    } else {
-                      _sheetTop = maxTop;
-                    }
-                  });
+                final double currentSize = _draggableController.size;
+                if (currentSize > 0.30 && currentSize < 0.95) {
+                  if (currentSize < 0.50) {
+                    _draggableController.animateTo(0.30, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                  } else if (currentSize < 0.80) {
+                    _draggableController.animateTo(0.68, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                  } else {
+                    _draggableController.animateTo(0.95, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                  }
                 }
               },
               child: PageView.builder(
@@ -264,9 +259,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
 
           // Thumbnails row overlapping the bottom edge, animating in sync with sheet
-          AnimatedPositioned(
-            duration: _animationDuration,
-            bottom: (screenHeight - _sheetTop!) + 15,
+          Positioned(
+            bottom: (screenHeight * _sheetSize) + 15,
             left: 20,
             right: 20,
             height: 55,
@@ -326,76 +320,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
 
           // 2. Scrollable Details Sheet
-          AnimatedPositioned(
-            duration: _animationDuration,
-            top: _sheetTop,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: NotificationListener<ScrollNotification>(
-              onNotification: (notification) {
-                double dy = 0.0;
-                if (notification is ScrollUpdateNotification) {
-                  dy = notification.scrollDelta ?? 0.0;
-                  if (_scrollController.offset > 0) {
-                    _wasListScrolled = true;
-                  }
-                } else if (notification is OverscrollNotification) {
-                  dy = notification.overscroll;
-                }
-
-                if (dy != 0.0) {
-                  if (_isAdjusting) return false;
-
-                  if (dy > 0) {
-                    // Scrolling down (content goes up -> expand sheet)
-                    if (_sheetTop! > minTop) {
-                      _isAdjusting = true;
-                      setState(() {
-                        _animationDuration = Duration.zero;
-                        _sheetTop = (_sheetTop! - dy).clamp(minTop, maxTop);
-                      });
-                      _scrollController.jumpTo(0);
-                      _isAdjusting = false;
-                      return true; // absorb notification
-                    }
-                  } else if (dy < 0) {
-                    // Scrolling up (content goes down -> collapse sheet)
-                    if (_scrollController.offset <= 0 && _sheetTop! < maxTop) {
-                      _isAdjusting = true;
-                      setState(() {
-                        _animationDuration = Duration.zero;
-                        _sheetTop = (_sheetTop! - dy).clamp(minTop, maxTop);
-                      });
-                      _scrollController.jumpTo(0);
-                      _isAdjusting = false;
-                      return true; // absorb notification
-                    }
-                  }
-                } else if (notification is ScrollEndNotification) {
-                  // If the user scrolled the list and returned to the top, collapse back to original position
-                  if (_scrollController.offset <= 0 && _wasListScrolled) {
-                    setState(() {
-                      _animationDuration = const Duration(milliseconds: 300);
-                      _sheetTop = maxTop;
-                      _wasListScrolled = false;
-                    });
-                  } else if (_sheetTop! > minTop && _sheetTop! < maxTop) {
-                    // Snap sheet to minTop or maxTop when user releases drag in between
-                    final double midPoint = (minTop + maxTop) / 2;
-                    setState(() {
-                      _animationDuration = const Duration(milliseconds: 300);
-                      if (_sheetTop! < midPoint) {
-                        _sheetTop = minTop;
-                      } else {
-                        _sheetTop = maxTop;
-                      }
-                    });
-                  }
-                }
-                return false;
-              },
-              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          Positioned.fill(
+            child: DraggableScrollableSheet(
+              controller: _draggableController,
+              initialChildSize: 0.68,
+              minChildSize: 0.30,
+              maxChildSize: 0.95,
+              snap: true,
+              snapSizes: const [0.30, 0.68, 0.95],
+              builder: (context, scrollController) {
+                return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
                     .collection('reviews')
                     .where('productId', isEqualTo: updatedProduct.id)
@@ -444,7 +378,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     ),
                     child: ListView(
                       physics: const ClampingScrollPhysics(),
-                      controller: _scrollController,
+                      controller: scrollController,
                       padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 32.0, bottom: 110.0),
                       children: [
                         // Title
@@ -854,10 +788,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                 )),
                         ]
                       ],
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                );
+              },
             ),
           ),
 
